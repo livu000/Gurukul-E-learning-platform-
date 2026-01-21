@@ -1,10 +1,13 @@
 const express = require('express');
 const router = express.Router();
-const course = require('../controllers/course.controller');
-// a simple middleware to decode JWT (implement properly in auth.middleware)
+
+const courseController = require('../controllers/course.controller');
 const { authenticate } = require('../middleware/auth.middleware');
 
-router.get('/', course.list);
-router.post('/', authenticate, course.createCourse);
+// Public: list all courses
+router.get('/', courseController.getAllCourses);
+
+// Protected: create course (teacher/admin later)
+router.post('/', authenticate, courseController.createCourse);
 
 module.exports = router;
