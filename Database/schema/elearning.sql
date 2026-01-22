@@ -21,15 +21,3 @@ CREATE TABLE courses (
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   FOREIGN KEY (teacherId) REFERENCES users(id)
 );
-
-CREATE TABLE enrollments (
-  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  userId INT UNSIGNED,
-  courseId INT UNSIGNED,
-  enrolled_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  status ENUM('active','cancelled','completed') DEFAULT 'active',
-  FOREIGN KEY (userId) REFERENCES users(id),
-  FOREIGN KEY (courseId) REFERENCES courses(id)
-);
-
--- additional tables: modules, lessons, assessments, questions, results, payments, invoices, certificates...
