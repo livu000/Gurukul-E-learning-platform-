@@ -18,4 +18,20 @@ router.post(
   courseController.createCourse
 );
 
+// Teacher submits course for review
+router.patch(
+  '/:id/submit',
+  authenticate,
+  authorizeRoles('teacher'),
+  courseController.submitForReview
+);
+
+// Admin approves/rejects
+router.patch(
+  '/:id/status',
+  authenticate,
+  authorizeRoles('admin'),
+  courseController.updateCourseStatus
+);
+
 module.exports = router;

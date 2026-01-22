@@ -15,7 +15,7 @@ const Course = sequelize.define('Course', {
     type: DataTypes.TEXT
   },
   status: {
-    type: DataTypes.ENUM('draft', 'published'),
+    type: DataTypes.ENUM('draft', 'review','published'),
     defaultValue: 'draft'
   },
   teacherId: {
