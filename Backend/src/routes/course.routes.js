@@ -5,10 +5,10 @@ const courseController = require('../controllers/course.controller');
 const { authenticate } = require('../middleware/auth.middleware');
 const { authorizeRoles } = require('../middleware/role.middleware');
 
-// PUBLIC
+// Public
 router.get('/', courseController.getAllCourses);
 
-// PROTECTED + ROLE-BASED
+// Protected + RBAC
 router.post(
   '/',
   authenticate,
