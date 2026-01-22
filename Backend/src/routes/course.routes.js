@@ -4,11 +4,13 @@ const router = express.Router();
 const courseController = require('../controllers/course.controller');
 const { authenticate } = require('../middleware/auth.middleware');
 const { authorizeRoles } = require('../middleware/role.middleware');
+const { optionalAuth } = require('../middleware/auth.optional');
+// GET courses
+// Anyone can access (auth optional, filtering handled in controller)
+router.get('/', optionalAuth, courseController.getAllCourses);
 
-// Public
-router.get('/', courseController.getAllCourses);
-
-// Protected + RBAC
+// CREATE course
+// Only admin & teacher
 router.post(
   '/',
   authenticate,
