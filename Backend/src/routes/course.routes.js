@@ -3,11 +3,17 @@ const router = express.Router();
 
 const courseController = require('../controllers/course.controller');
 const { authenticate } = require('../middleware/auth.middleware');
+const { authorizeRoles } = require('../middleware/role.middleware');
 
-// Public: list all courses
+// PUBLIC
 router.get('/', courseController.getAllCourses);
 
-// Protected: create course (teacher/admin later)
-router.post('/', authenticate, courseController.createCourse);
+// PROTECTED + ROLE-BASED
+router.post(
+  '/',
+  authenticate,
+  authorizeRoles('admin', 'teacher'),
+  courseController.createCourse
+);
 
 module.exports = router;
