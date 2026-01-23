@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import api, { setToken } from '../services/api';
 
-
 function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -19,9 +18,18 @@ function Login() {
     try {
       const res = await api.post('/auth/login', { email, password });
 
-      setToken(res.data.token);
+      const token = res.data.token;
+
+      // ✅ 1. Save token permanently
+      localStorage.setItem('token', token);
+
+      // ✅ 2. Save user info
       localStorage.setItem('user', JSON.stringify(res.data.user));
 
+      // ✅ 3. Attach token to axios immediately
+      setToken(token);
+
+      // ✅ 4. Redirect
       window.location.href = '/';
     } catch (err) {
       setError(err.response?.data?.message || 'Login failed');
