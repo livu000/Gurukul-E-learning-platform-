@@ -12,5 +12,7 @@ app.get('/', (req, res) => {
 });
 app.use('/api/auth', authRoutes);
 app.use('/api/courses', courseRoutes);
+app.use('/api/modules', require('./routes/module.routes'));
+app.use('/api/lessons', require('./routes/lesson.routes'));
 
 module.exports = app;

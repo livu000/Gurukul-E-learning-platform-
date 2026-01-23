@@ -9,7 +9,7 @@ async function start() {
     await sequelize.authenticate();
     console.log('DB connected');
     // sync in development - for production use migrations
-    await sequelize.sync({ alter: true });
+    // await sequelize.sync({ alter: true });
 
     app.listen(PORT, () => {
       console.log(`Server running on http://localhost:${PORT}`);

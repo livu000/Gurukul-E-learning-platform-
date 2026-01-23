@@ -21,3 +21,31 @@ CREATE TABLE IF NOT EXISTS courses (
 
   FOREIGN KEY (teacher_id) REFERENCES users(id)
 );
+
+CREATE TABLE modules (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  course_id INT UNSIGNED NOT NULL,
+  title VARCHAR(255) NOT NULL,
+  sort_order INT DEFAULT 1,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+  CONSTRAINT fk_modules_course
+    FOREIGN KEY (course_id)
+    REFERENCES courses(id)
+    ON DELETE CASCADE
+);
+
+CREATE TABLE lessons (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  module_id INT UNSIGNED NOT NULL,
+  title VARCHAR(255) NOT NULL,
+  content TEXT,
+  video_url VARCHAR(500),
+  sort_order INT DEFAULT 1,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+  CONSTRAINT fk_lessons_module
+    FOREIGN KEY (module_id)
+    REFERENCES modules(id)
+    ON DELETE CASCADE
+);
