@@ -4,6 +4,7 @@ const User = require('./user.model');
 const Course = require('./course.model');
 const Module = require('./module.model');
 const Lesson = require('./lesson.model');
+const LessonProgress = require('./lessonProgress.model');
 // Associations
 User.hasMany(Course, {
   foreignKey: 'teacher_id',
@@ -23,5 +24,6 @@ module.exports = {
   User,
   Course,
   Module,
-  Lesson
+  Lesson,
+  LessonProgress
 };

@@ -49,3 +49,33 @@ CREATE TABLE lessons (
     REFERENCES modules(id)
     ON DELETE CASCADE
 );
+
+CREATE TABLE lesson_progress (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+
+  user_id BIGINT UNSIGNED NOT NULL,
+  lesson_id BIGINT UNSIGNED NOT NULL,
+  course_id BIGINT UNSIGNED NOT NULL,
+
+  status ENUM('started','completed') DEFAULT 'started',
+  completed_at DATETIME NULL,
+
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+
+  CONSTRAINT fk_lp_user
+    FOREIGN KEY (user_id) REFERENCES users(id)
+    ON DELETE CASCADE,
+
+  CONSTRAINT fk_lp_lesson
+    FOREIGN KEY (lesson_id) REFERENCES lessons(id)
+    ON DELETE CASCADE,
+
+  CONSTRAINT fk_lp_course
+    FOREIGN KEY (course_id) REFERENCES courses(id)
+    ON DELETE CASCADE,
+
+  UNIQUE KEY uniq_user_lesson (user_id, lesson_id),
+  INDEX idx_lp_course (course_id),
+  INDEX idx_lp_user (user_id)
+) ENGINE=InnoDB;

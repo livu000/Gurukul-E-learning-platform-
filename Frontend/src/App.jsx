@@ -6,7 +6,7 @@ import Dashboard from './pages/Dashboard';
 import CreateCourse from './pages/CreateCourse';
 import CourseList from './pages/CourseList';
 import CourseView from './pages/CourseView';
-
+import LessonView from './pages/LessonView';
 import { setToken } from './services/api';
 
 function App() {
@@ -35,7 +35,10 @@ function App() {
 
       {/* Course Listing */}
       <Route path="/courses" element={<CourseList />} />
+
       <Route path="/courses/:id" element={<CourseView />} />
+
+      <Route path="/lessons/:lessonId" element={<LessonView />} />
     </Routes>
   );
 }

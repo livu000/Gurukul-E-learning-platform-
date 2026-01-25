@@ -14,5 +14,6 @@ app.use('/api/auth', authRoutes);
 app.use('/api/courses', courseRoutes);
 app.use('/api/modules', require('./routes/module.routes'));
 app.use('/api/lessons', require('./routes/lesson.routes'));
+app.use('/api/progress', require('./routes/progress.routes'));
 
 module.exports = app;
