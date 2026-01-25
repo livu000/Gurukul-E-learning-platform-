@@ -79,3 +79,86 @@ CREATE TABLE lesson_progress (
   INDEX idx_lp_course (course_id),
   INDEX idx_lp_user (user_id)
 ) ENGINE=InnoDB;
+
+
+CREATE TABLE quizzes (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  course_id INT UNSIGNED NOT NULL,
+  title VARCHAR(255) NOT NULL,
+  description TEXT,
+  time_limit INT DEFAULT NULL, -- minutes
+  total_marks INT DEFAULT 0,
+  is_published BOOLEAN DEFAULT FALSE,
+  created_by INT UNSIGNED NOT NULL,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+
+  CONSTRAINT fk_quiz_course
+    FOREIGN KEY (course_id) REFERENCES courses(id)
+    ON DELETE CASCADE,
+
+  CONSTRAINT fk_quiz_teacher
+    FOREIGN KEY (created_by) REFERENCES users(id)
+    ON DELETE RESTRICT
+) ENGINE=InnoDB;
+
+CREATE TABLE quiz_questions (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  quiz_id INT UNSIGNED NOT NULL,
+  question_text TEXT NOT NULL,
+  marks INT DEFAULT 1,
+  sort_order INT DEFAULT 1,
+
+  CONSTRAINT fk_question_quiz
+    FOREIGN KEY (quiz_id) REFERENCES quizzes(id)
+    ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+CREATE TABLE quiz_options (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  question_id INT UNSIGNED NOT NULL,
+  option_text VARCHAR(255) NOT NULL,
+  is_correct BOOLEAN DEFAULT FALSE,
+
+  CONSTRAINT fk_option_question
+    FOREIGN KEY (question_id) REFERENCES quiz_questions(id)
+    ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+CREATE TABLE quiz_attempts (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  quiz_id INT UNSIGNED NOT NULL,
+  student_id INT UNSIGNED NOT NULL,
+  score INT DEFAULT 0,
+  started_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  submitted_at DATETIME DEFAULT NULL,
+
+  CONSTRAINT fk_attempt_quiz
+    FOREIGN KEY (quiz_id) REFERENCES quizzes(id)
+    ON DELETE CASCADE,
+
+  CONSTRAINT fk_attempt_student
+    FOREIGN KEY (student_id) REFERENCES users(id)
+    ON DELETE CASCADE,
+
+  UNIQUE KEY uniq_student_quiz (quiz_id, student_id)
+) ENGINE=InnoDB;
+
+CREATE TABLE quiz_answers (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  attempt_id INT UNSIGNED NOT NULL,
+  question_id INT UNSIGNED NOT NULL,
+  selected_option_id INT UNSIGNED NOT NULL,
+  is_correct BOOLEAN DEFAULT FALSE,
+
+  CONSTRAINT fk_answer_attempt
+    FOREIGN KEY (attempt_id) REFERENCES quiz_attempts(id)
+    ON DELETE CASCADE,
+
+  CONSTRAINT fk_answer_question
+    FOREIGN KEY (question_id) REFERENCES quiz_questions(id)
+    ON DELETE CASCADE,
+
+  CONSTRAINT fk_answer_option
+    FOREIGN KEY (selected_option_id) REFERENCES quiz_options(id)
+    ON DELETE CASCADE
+) ENGINE=InnoDB;
