@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import api, { setToken } from '../services/api';
+import api from '../services/api';
 
 function Login() {
   const [email, setEmail] = useState('');
@@ -20,16 +20,15 @@ function Login() {
 
       const token = res.data.token;
 
-      // ✅ 1. Save token permanently
+      // ✅ Save token (interceptor will read it automatically)
       localStorage.setItem('token', token);
 
-      // ✅ 2. Save user info
+      // ✅ Save user info
       localStorage.setItem('user', JSON.stringify(res.data.user));
 
-      // ✅ 3. Attach token to axios immediately
-      setToken(token);
+      // ❌ NO setToken() call anymore
 
-      // ✅ 4. Redirect
+      // ✅ Redirect
       window.location.href = '/';
     } catch (err) {
       setError(err.response?.data?.message || 'Login failed');

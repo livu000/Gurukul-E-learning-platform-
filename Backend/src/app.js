@@ -17,5 +17,7 @@ app.use('/api/lessons', require('./routes/lesson.routes'));
 app.use('/api/progress', require('./routes/progress.routes'));
 app.use('/api/quizzes', require('./routes/quiz.routes'));
 app.use('/api/quiz-questions', require('./routes/quizQuestion.routes'));
+app.use('/api/quiz-attempts', require('./routes/quizAttempt.routes'));
+app.use('/api/quiz-submissions', require('./routes/quizSubmission.routes'));
 
 module.exports = app;

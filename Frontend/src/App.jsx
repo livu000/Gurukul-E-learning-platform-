@@ -1,4 +1,3 @@
-import { useEffect } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 
 import Login from './pages/Login';
@@ -7,18 +6,8 @@ import CreateCourse from './pages/CreateCourse';
 import CourseList from './pages/CourseList';
 import CourseView from './pages/CourseView';
 import LessonView from './pages/LessonView';
-import { setToken } from './services/api';
 
 function App() {
-
-  // 🔐 Re-apply token on page refresh
-  useEffect(() => {
-    const token = localStorage.getItem('token');
-    if (token) {
-      setToken(token);
-    }
-  }, []);
-
   return (
     <Routes>
       {/* Default redirect */}

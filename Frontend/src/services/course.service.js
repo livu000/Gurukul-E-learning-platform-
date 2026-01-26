@@ -23,3 +23,9 @@ export const getLessonsByModule = async (moduleId) => {
   const res = await api.get(`/lessons/module/${moduleId}`);
   return res.data;
 };
+
+// Get course progress (student only)
+export const getCourseProgress = async (courseId) => {
+  const res = await api.get(`/progress/course/${courseId}`);
+  return res.data;
+};
