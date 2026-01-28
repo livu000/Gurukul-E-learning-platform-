@@ -33,7 +33,7 @@ router.post(
 router.get(
   '/course/:courseId',
   authenticate,
-  authorizeRoles('student'),
+  authorizeRoles('student', 'teacher'),
   controller.getAssignmentsByCourse
 );
 

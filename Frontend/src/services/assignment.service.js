@@ -1,6 +1,6 @@
 import api from './api';
 
-// STUDENT
+// STUDENT and TEACHER
 export const getAssignmentsByCourse = async (courseId) => {
   const res = await api.get(`/assignments/course/${courseId}`);
   return res.data;
