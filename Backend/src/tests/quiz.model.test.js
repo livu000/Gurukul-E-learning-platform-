@@ -43,13 +43,13 @@
 // })();
 
 
-const QuizAnswer = require('../models/quizAnswer.model');
+// const QuizAnswer = require('../models/quizAnswer.model');
 
-(async () => {
-  try {
-    const answers = await QuizAnswer.findAll();
-    console.log('Quiz Answers:', answers);
-  } catch (err) {
-    console.error('QuizAnswer error:', err);
-  }
-})();
+// (async () => {
+//   try {
+//     const answers = await QuizAnswer.findAll();
+//     console.log('Quiz Answers:', answers);
+//   } catch (err) {
+//     console.error('QuizAnswer error:', err);
+//   }
+// })();

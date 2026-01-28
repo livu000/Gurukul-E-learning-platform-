@@ -162,3 +162,43 @@ CREATE TABLE quiz_answers (
     FOREIGN KEY (selected_option_id) REFERENCES quiz_options(id)
     ON DELETE CASCADE
 ) ENGINE=InnoDB;
+
+CREATE TABLE assignments (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  course_id INT UNSIGNED NOT NULL,
+  title VARCHAR(255) NOT NULL,
+  description TEXT,
+  max_marks INT NOT NULL,
+  due_date DATETIME NULL,
+  created_by INT UNSIGNED NOT NULL,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+
+  FOREIGN KEY (course_id) REFERENCES courses(id) ON DELETE CASCADE,
+  FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE TABLE assignment_submissions (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  assignment_id INT UNSIGNED NOT NULL,
+  student_id INT UNSIGNED NOT NULL,
+  answer_text TEXT,
+  file_url VARCHAR(500),
+  submitted_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+
+  UNIQUE KEY uniq_assignment_student (assignment_id, student_id),
+
+  FOREIGN KEY (assignment_id) REFERENCES assignments(id) ON DELETE CASCADE,
+  FOREIGN KEY (student_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE TABLE assignment_grades (
+  id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  submission_id INT UNSIGNED NOT NULL,
+  marks_awarded INT NOT NULL,
+  feedback TEXT,
+  graded_by INT UNSIGNED NOT NULL,
+  graded_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+
+  FOREIGN KEY (submission_id) REFERENCES assignment_submissions(id) ON DELETE CASCADE,
+  FOREIGN KEY (graded_by) REFERENCES users(id) ON DELETE CASCADE
+);
