@@ -202,3 +202,21 @@ CREATE TABLE assignment_grades (
   FOREIGN KEY (submission_id) REFERENCES assignment_submissions(id) ON DELETE CASCADE,
   FOREIGN KEY (graded_by) REFERENCES users(id) ON DELETE CASCADE
 );
+
+CREATE TABLE certificates (
+  id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  certificate_id VARCHAR(40) NOT NULL UNIQUE,
+  user_id INT UNSIGNED NOT NULL,
+  course_id INT UNSIGNED NOT NULL,
+  issued_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+  INDEX idx_user_course (user_id, course_id),
+
+  CONSTRAINT fk_cert_user
+    FOREIGN KEY (user_id) REFERENCES users(id)
+    ON DELETE RESTRICT ON UPDATE CASCADE,
+
+  CONSTRAINT fk_cert_course
+    FOREIGN KEY (course_id) REFERENCES courses(id)
+    ON DELETE RESTRICT ON UPDATE CASCADE
+);

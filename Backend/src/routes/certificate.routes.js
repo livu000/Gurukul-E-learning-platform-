@@ -1,9 +1,25 @@
-const router = require("express").Router();
-const ctrl = require("../controllers/certificate.controller");
-const auth = require("../middleware/auth.middleware");
+const express = require("express");
+const router = express.Router();
 
-router.post("/course/:courseId/issue", auth, ctrl.issueCertificate);
-router.get("/my", auth, ctrl.getMyCertificates);
-router.get("/verify/:certificateId", ctrl.verifyCertificate);
+const { authenticate } = require("../middleware/auth.middleware");
+//console.log("DEBUG auth =>", authenticate);
+const certificateController = require("../controllers/certificate.controller");
+//console.log("DEBUG controller import =>", certificateController);
+router.post(
+  "/course/:courseId/issue",
+  authenticate,
+  certificateController.issueCertificate
+);
+
+router.get(
+  "/my",
+  authenticate,
+  certificateController.getMyCertificates
+);
+
+router.get(
+  "/verify/:certificateId",
+  certificateController.verifyCertificate
+);
 
 module.exports = router;
