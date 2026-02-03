@@ -51,6 +51,8 @@ function App() {
       <Route path="/assignments/:assignmentId/submissions" element={<AssignmentSubmissions />} />
       <Route path="/assignments/submissions/:submissionId/grade" element={<GradeSubmission />} />
       <Route path="/teacher/assignments/:assignmentId/submissions" element={<AssignmentSubmissions />}/>
+      <Route path="/my-certificates" element={<MyCertificates />} />
+      <Route path="/verify/:id" element={<VerifyCertificate />} />
 
     </Routes>
   );

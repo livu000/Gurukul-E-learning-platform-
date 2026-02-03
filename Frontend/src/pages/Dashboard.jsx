@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import api from '../services/api';
 
 function Dashboard() {
@@ -26,9 +27,23 @@ function Dashboard() {
         </button>
       )}
 
+      {/* STUDENT ACTIONS */}
+      {user?.role === 'student' && (
+        <div style={{ margin: '20px 0' }}>
+          <h4>Student Actions</h4>
+          <Link to="/my-certificates">My Certificates</Link>
+        </div>
+      )}
+
+      <h4>Available Courses</h4>
+
       <ul>
         {courses.map(course => (
-          <li key={course.id}>{course.title}</li>
+          <li key={course.id}>
+            <Link to={`/courses/${course.id}`}>
+              {course.title}
+            </Link>
+          </li>
         ))}
       </ul>
     </div>

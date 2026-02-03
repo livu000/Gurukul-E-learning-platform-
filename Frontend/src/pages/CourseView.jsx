@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { getModulesByCourse, getLessonsByModule } from '../services/course.service';
+import { issueCertificate } from '../services/certificate.service';
 import api from '../services/api';
 
 function CourseView() {
@@ -9,12 +10,11 @@ function CourseView() {
   const [modules, setModules] = useState([]);
   const [lessons, setLessons] = useState({});
   const [progress, setProgress] = useState(null);
+  const [certificate, setCertificate] = useState(null);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
 
-
   // Load modules
-
   useEffect(() => {
     getModulesByCourse(id)
       .then((data) => {
@@ -27,9 +27,7 @@ function CourseView() {
       });
   }, [id]);
 
-
   // Load course progress
-
   useEffect(() => {
     const fetchProgress = async () => {
       try {
@@ -37,24 +35,32 @@ function CourseView() {
         setProgress(res.data);
       } catch (err) {
         console.error('Failed to load progress', err);
-        // no alert – progress is optional UI
       }
     };
 
     fetchProgress();
   }, [id]);
 
-
   // Lazy load lessons per module
-
   const loadLessons = async (moduleId) => {
-    if (lessons[moduleId]) return; // already loaded
+    if (lessons[moduleId]) return;
 
     try {
       const data = await getLessonsByModule(moduleId);
       setLessons((prev) => ({ ...prev, [moduleId]: data }));
     } catch {
       setError('Failed to load lessons');
+    }
+  };
+
+  // Handle certificate generation
+  const handleGetCertificate = async () => {
+    try {
+      const data = await issueCertificate(id);
+      setCertificate(data);
+      alert('Certificate generated successfully!');
+    } catch (err) {
+      alert(err.response?.data?.message || 'Error generating certificate');
     }
   };
 
@@ -68,9 +74,7 @@ function CourseView() {
 
       {error && <p style={{ color: 'red' }}>{error}</p>}
 
-
       {/* Progress Bar */}
-
       {progress && (
         <div style={{ marginBottom: 25 }}>
           <p>
@@ -100,12 +104,25 @@ function CourseView() {
           <p style={{ marginTop: 6, fontWeight: 'bold' }}>
             {progress.percentage}%
           </p>
+
+          {/* Certificate Button */}
+          {progress.percentage === 100 && (
+            <div style={{ marginTop: 15 }}>
+              <button onClick={handleGetCertificate}>
+                Get Certificate
+              </button>
+
+              {certificate && (
+                <p style={{ marginTop: 10, color: 'green' }}>
+                  Certificate ID: {certificate.certificate_id}
+                </p>
+              )}
+            </div>
+          )}
         </div>
       )}
 
-
       {/* Modules & Lessons */}
-
       {modules.map((m) => (
         <div
           key={m.id}
