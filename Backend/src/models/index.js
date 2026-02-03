@@ -18,6 +18,8 @@ const QuizAnswer = require('./quizAnswer.model');
 const Assignment = require('./assignment.model');
 const AssignmentSubmission = require('./assignmentSubmission.model');
 const AssignmentGrade = require('./assignmentGrade.model');
+// certification
+const Certificate = require('./certificate.model');
 
 
 // Associations
@@ -34,6 +36,12 @@ Module.belongsTo(Course, { foreignKey: 'course_id' });
 
 Module.hasMany(Lesson, { foreignKey: 'module_id' });
 Lesson.belongsTo(Module, { foreignKey: 'module_id' });
+
+User.hasMany(Certificate, { foreignKey: 'user_id' });
+Certificate.belongsTo(User, { foreignKey: 'user_id' });
+
+Course.hasMany(Certificate, { foreignKey: 'course_id' });
+Certificate.belongsTo(Course, { foreignKey: 'course_id' });
 
 // (Assignments & quizzes associations will be handled in controllers)
 
@@ -57,5 +65,6 @@ module.exports = {
 
   Assignment,
   AssignmentSubmission,
-  AssignmentGrade
+  AssignmentGrade,
+  Certificate
 };

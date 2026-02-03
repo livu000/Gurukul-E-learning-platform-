@@ -20,4 +20,6 @@ app.use('/api/quiz-questions', require('./routes/quizQuestion.routes'));
 app.use('/api/quiz-attempts', require('./routes/quizAttempt.routes'));
 app.use('/api/quiz-submissions', require('./routes/quizSubmission.routes'));
 app.use('/api/assignments', assignmentRoutes);
+app.use("/api/certificates", require("./routes/certificate.routes"));
+
 module.exports = app;
