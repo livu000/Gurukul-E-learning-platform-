@@ -8,9 +8,9 @@ import {
 function TeacherAssignments() {
   const { courseId } = useParams();
 
-
+  // =========================
   // State
-
+  // =========================
   const [assignments, setAssignments] = useState([]);
 
   const [title, setTitle] = useState('');
@@ -22,9 +22,9 @@ function TeacherAssignments() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
 
-
+  // =========================
   // Load assignments
-
+  // =========================
   const fetchAssignments = useCallback(async () => {
     try {
       const data = await getAssignmentsByCourse(courseId);
@@ -40,9 +40,9 @@ function TeacherAssignments() {
     fetchAssignments();
   }, [fetchAssignments]);
 
- 
+  // =========================
   // Create assignment
-
+  // =========================
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
@@ -76,9 +76,9 @@ function TeacherAssignments() {
     <div style={{ maxWidth: 800, margin: '30px auto' }}>
       <h2>Assignments</h2>
 
-
+      {/* ===================== */}
       {/* Assignment List */}
-
+      {/* ===================== */}
       {loading && <p>Loading assignments...</p>}
 
       {!loading && assignments.length === 0 && (
@@ -112,9 +112,9 @@ function TeacherAssignments() {
 
       <hr style={{ margin: '30px 0' }} />
 
-
+      {/* ===================== */}
       {/* Create Assignment */}
-
+      {/* ===================== */}
       <h3>Create Assignment</h3>
 
       {error && <p style={{ color: 'red' }}>{error}</p>}

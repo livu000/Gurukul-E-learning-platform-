@@ -1,67 +1,123 @@
-import { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import api from '../services/api';
+import { useEffect, useState, useCallback } from 'react';
+import { useParams } from 'react-router-dom';
+import {
+  getSubmissionsByAssignment,
+  gradeSubmission
+} from '../services/assignment.service';
 
-function GradeSubmission() {
-  const { submissionId } = useParams();
-  const navigate = useNavigate();
+function AssignmentSubmissions() {
+  const { assignmentId } = useParams();
 
-  const [submission, setSubmission] = useState(null);
-  const [marks, setMarks] = useState('');
-  const [feedback, setFeedback] = useState('');
+  const [submissions, setSubmissions] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  useEffect(() => {
-    api.get(`/assignments/submissions/${submissionId}`)
-      .then(res => setSubmission(res.data))
-      .catch(() => setError('Failed to load submission'));
-  }, [submissionId]);
-
-  const handleGrade = async () => {
+  // =========================
+  // Fetch submissions (React-correct)
+  // =========================
+  const fetchSubmissions = useCallback(async () => {
     try {
-      await api.post('/assignments/grade', {
-        submissionId,
-        marks,
-        feedback
-      });
+      const data = await getSubmissionsByAssignment(assignmentId);
+      setSubmissions(data);
+      setError('');
+    } catch {
+      setError('Failed to load submissions');
+    } finally {
+      setLoading(false);
+    }
+  }, [assignmentId]);
 
-      navigate(-1);
-    } catch (err) {
-      setError(err.response?.data?.message || 'Failed to grade');
+  useEffect(() => {
+    fetchSubmissions();
+  }, [fetchSubmissions]);
+
+  // =========================
+  // Grade submission
+  // =========================
+  const handleGrade = async (submissionId, marks, feedback) => {
+    try {
+      await gradeSubmission(submissionId, { marks, feedback });
+      fetchSubmissions(); // refresh after grading
+    } catch {
+      alert('Failed to submit grade');
     }
   };
 
-  if (!submission) return <p>Loading submission...</p>;
+  if (loading) return <p>Loading submissions...</p>;
+  if (error) return <p style={{ color: 'red' }}>{error}</p>;
 
   return (
-    <div style={{ maxWidth: 600, margin: '30px auto' }}>
-      <h2>Grade Submission</h2>
+    <div style={{ maxWidth: 900, margin: '30px auto' }}>
+      <h2>Assignment Submissions</h2>
 
-      {error && <p style={{ color: 'red' }}>{error}</p>}
+      {submissions.length === 0 && <p>No submissions yet.</p>}
 
-      <p><strong>Answer:</strong></p>
-      <p>{submission.answerText}</p>
+      {submissions.map((s) => (
+        <SubmissionCard
+          key={s.id}
+          submission={s}
+          onGrade={handleGrade}
+        />
+      ))}
+    </div>
+  );
+}
+
+// =========================
+// Submission Card
+// =========================
+function SubmissionCard({ submission, onGrade }) {
+  const [marks, setMarks] = useState(submission.grade?.marks || '');
+  const [feedback, setFeedback] = useState(submission.grade?.feedback || '');
+
+  return (
+    <div
+      style={{
+        border: '1px solid #ccc',
+        padding: 15,
+        marginBottom: 15,
+        borderRadius: 6
+      }}
+    >
+      <h4>Student: {submission.student?.name || 'Unknown'}</h4>
+
+      <p>
+        <strong>Submitted At:</strong>{' '}
+        {new Date(submission.submittedAt).toLocaleString()}
+      </p>
+
+      <p><strong>Submission:</strong></p>
+      <p style={{ background: '#f9f9f9', padding: 10 }}>
+        {submission.answerText}
+      </p>
+
+      <hr />
 
       <input
         type="number"
         placeholder="Marks"
         value={marks}
-        onChange={e => setMarks(e.target.value)}
-        required
+        onChange={(e) => setMarks(e.target.value)}
       />
       <br /><br />
 
       <textarea
         placeholder="Feedback"
         value={feedback}
-        onChange={e => setFeedback(e.target.value)}
-        rows={4}
+        onChange={(e) => setFeedback(e.target.value)}
+        rows={3}
       />
       <br /><br />
 
-      <button onClick={handleGrade}>Submit Grade</button>
+      <button
+        onClick={() =>
+          onGrade(submission.id, marks, feedback)
+        }
+      >
+        Save Grade
+      </button>
     </div>
   );
 }
 
-export default GradeSubmission;
+export default AssignmentSubmissions;
