@@ -12,7 +12,7 @@ exports.startQuiz = async (req, res) => {
       });
     }
 
-    // 1️⃣ Verify quiz exists
+    // 1️ Verify quiz exists
     const quiz = await Quiz.findByPk(quizId);
     if (!quiz) {
       return res.status(404).json({
@@ -20,14 +20,14 @@ exports.startQuiz = async (req, res) => {
       });
     }
 
-    // 2️⃣ Quiz must be published
+    // 2️ Quiz must be published
     if (!quiz.isPublished) {
       return res.status(403).json({
         message: 'Quiz is not published yet'
       });
     }
 
-    // 3️⃣ Prevent multiple attempts
+    // 3️ Prevent multiple attempts
     const existingAttempt = await QuizAttempt.findOne({
       where: {
         quizId,
@@ -41,7 +41,7 @@ exports.startQuiz = async (req, res) => {
       });
     }
 
-    // 4️⃣ Create quiz attempt
+    // 4️ Create quiz attempt
     const attempt = await QuizAttempt.create({
       quizId,
       studentId,

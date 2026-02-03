@@ -6,31 +6,31 @@ exports.login = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    // 1️⃣ Validate input
+    // 1️ Validate input
     if (!email || !password) {
       return res.status(400).json({ message: 'Email and password required' });
     }
 
-    // 2️⃣ Find user
+    // 2️ Find user
     const user = await User.findOne({ where: { email } });
     if (!user) {
       return res.status(401).json({ message: 'Invalid credentials' });
     }
 
-    // 3️⃣ Compare password
+    // 3️ Compare password
     const match = await bcrypt.compare(password, user.password);
     if (!match) {
       return res.status(401).json({ message: 'Invalid credentials' });
     }
 
-    // 4️⃣ Create token
+    // 4️ Create token
     const token = jwt.sign(
       { id: user.id, role: user.role },
       process.env.JWT_SECRET,
       { expiresIn: '1d' }
     );
 
-    // 5️⃣ Send response
+    // 5️ Send response
     res.json({
       token,
       user: {

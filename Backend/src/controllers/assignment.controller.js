@@ -5,18 +5,14 @@ const {
 } = require('../models');
 
 /**
- * =========================
- * TEACHER — CREATE ASSIGNMENT
- * =========================
+TEACHER — CREATE ASSIGNMENT
  */
 exports.createAssignment = async (req, res) => {
   try {
     const { courseId, title, description, maxMarks, dueDate } = req.body;
-
     if (!courseId || !title || !maxMarks) {
       return res.status(400).json({ message: 'courseId, title, maxMarks required' });
     }
-
     const assignment = await Assignment.create({
       courseId,
       title,
@@ -34,9 +30,7 @@ exports.createAssignment = async (req, res) => {
 };
 
 /**
- * =========================
  * STUDENT — VIEW ASSIGNMENTS
- * =========================
  */
 exports.getAssignmentsByCourse = async (req, res) => {
   try {
@@ -52,9 +46,7 @@ exports.getAssignmentsByCourse = async (req, res) => {
 };
 
 /**
- * =========================
  * STUDENT — SUBMIT ASSIGNMENT
- * =========================
  */
 exports.submitAssignment = async (req, res) => {
   try {
@@ -90,9 +82,7 @@ exports.submitAssignment = async (req, res) => {
 };
 
 /**
- * =========================
  * TEACHER — VIEW SUBMISSIONS
- * =========================
  */
 exports.getSubmissionsByAssignment = async (req, res) => {
   try {
@@ -108,9 +98,7 @@ exports.getSubmissionsByAssignment = async (req, res) => {
 };
 
 /**
- * =========================
  * TEACHER — GRADE SUBMISSION
- * =========================
  */
 exports.gradeSubmission = async (req, res) => {
   try {

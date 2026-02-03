@@ -20,15 +20,15 @@ function Login() {
 
       const token = res.data.token;
 
-      // ✅ Save token (interceptor will read it automatically)
+      //  Save token (interceptor will read it automatically)
       localStorage.setItem('token', token);
 
-      // ✅ Save user info
+      //  Save user info
       localStorage.setItem('user', JSON.stringify(res.data.user));
 
-      // ❌ NO setToken() call anymore
+      //  NO setToken() call anymore
 
-      // ✅ Redirect
+      //  Redirect
       window.location.href = '/';
     } catch (err) {
       setError(err.response?.data?.message || 'Login failed');

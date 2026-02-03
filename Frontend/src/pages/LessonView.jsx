@@ -50,9 +50,9 @@ const LessonView = () => {
     }
   };
 
-  // ----------------------------
+
   // Render states
-  // ----------------------------
+
   if (loading) {
     return <p>Loading lesson...</p>;
   }
@@ -84,7 +84,7 @@ const LessonView = () => {
 
       {progress?.status === 'completed' ? (
         <p style={{ color: 'green', fontWeight: 'bold' }}>
-          ✅ Lesson Completed
+           Lesson Completed
         </p>
       ) : (
         <button onClick={handleComplete}>

@@ -3,9 +3,9 @@ const controller = require('../controllers/assignment.controller');
 const { authenticate } = require('../middleware/auth.middleware');
 const { authorizeRoles } = require('../middleware/role.middleware');
 
-// =========================
+
 // Teacher
-// =========================
+
 router.post(
   '/',
   authenticate,
@@ -27,9 +27,9 @@ router.post(
   controller.gradeSubmission
 );
 
-// =========================
+
 // Student
-// =========================
+
 router.get(
   '/course/:courseId',
   authenticate,

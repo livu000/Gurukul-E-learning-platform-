@@ -15,8 +15,6 @@ router.get(
   controller.getLessonsByModule
 );
 
-// ===== Feature 2.5 =====
-
 // Get lesson content + progress
 router.get(
   '/:lessonId',

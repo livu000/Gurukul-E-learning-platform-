@@ -14,7 +14,7 @@ exports.submitQuiz = async (req, res) => {
       });
     }
 
-    // 1️⃣ Verify attempt exists
+    // 1️ Verify attempt exists
     const attempt = await QuizAttempt.findByPk(attemptId);
     if (!attempt) {
       return res.status(404).json({
@@ -22,14 +22,14 @@ exports.submitQuiz = async (req, res) => {
       });
     }
 
-    // 2️⃣ Ownership check
+    // 2️ Ownership check
     if (attempt.studentId !== studentId) {
       return res.status(403).json({
         message: 'You are not allowed to submit this attempt'
       });
     }
 
-    // 3️⃣ Prevent resubmission
+    // 3️ Prevent resubmission
     if (attempt.submittedAt) {
       return res.status(409).json({
         message: 'Quiz already submitted'
@@ -39,7 +39,7 @@ exports.submitQuiz = async (req, res) => {
     let totalScore = 0;
     const answerRows = [];
 
-    // 4️⃣ Evaluate each answer
+    // 4️ Evaluate each answer
     for (const ans of answers) {
       const { questionId, selectedOptionId } = ans;
 
@@ -73,10 +73,10 @@ exports.submitQuiz = async (req, res) => {
       });
     }
 
-    // 5️⃣ Save answers
+    // 5️ Save answers
     await QuizAnswer.bulkCreate(answerRows);
 
-    // 6️⃣ Update attempt
+    // 6️ Update attempt
     attempt.score = totalScore;
     attempt.submittedAt = new Date();
     await attempt.save();

@@ -19,9 +19,9 @@ const Assignment = require('./assignment.model');
 const AssignmentSubmission = require('./assignmentSubmission.model');
 const AssignmentGrade = require('./assignmentGrade.model');
 
-// ==================
+
 // Associations
-// ==================
+
 User.hasMany(Course, {
   foreignKey: 'teacher_id',
   onDelete: 'RESTRICT',
@@ -37,9 +37,9 @@ Lesson.belongsTo(Module, { foreignKey: 'module_id' });
 
 // (Assignments & quizzes associations will be handled in controllers)
 
-// ==================
+
 // Exports
-// ==================
+
 module.exports = {
   sequelize,
 

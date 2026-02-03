@@ -12,9 +12,9 @@ function CourseView() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
 
-  // ==============================
+
   // Load modules
-  // ==============================
+
   useEffect(() => {
     getModulesByCourse(id)
       .then((data) => {
@@ -27,9 +27,9 @@ function CourseView() {
       });
   }, [id]);
 
-  // ==============================
+
   // Load course progress
-  // ==============================
+
   useEffect(() => {
     const fetchProgress = async () => {
       try {
@@ -44,9 +44,9 @@ function CourseView() {
     fetchProgress();
   }, [id]);
 
-  // ==============================
+
   // Lazy load lessons per module
-  // ==============================
+
   const loadLessons = async (moduleId) => {
     if (lessons[moduleId]) return; // already loaded
 
@@ -68,9 +68,9 @@ function CourseView() {
 
       {error && <p style={{ color: 'red' }}>{error}</p>}
 
-      {/* ===================== */}
+
       {/* Progress Bar */}
-      {/* ===================== */}
+
       {progress && (
         <div style={{ marginBottom: 25 }}>
           <p>
@@ -103,9 +103,9 @@ function CourseView() {
         </div>
       )}
 
-      {/* ===================== */}
+
       {/* Modules & Lessons */}
-      {/* ===================== */}
+
       {modules.map((m) => (
         <div
           key={m.id}
