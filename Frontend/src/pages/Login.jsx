@@ -1,10 +1,13 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
 
 function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+
+  const navigate = useNavigate(); // ✅ React navigation
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -20,16 +23,15 @@ function Login() {
 
       const token = res.data.token;
 
-      //  Save token (interceptor will read it automatically)
+      // Save token
       localStorage.setItem('token', token);
 
-      //  Save user info
+      // Save user info
       localStorage.setItem('user', JSON.stringify(res.data.user));
 
-      //  NO setToken() call anymore
+      // ✅ Proper redirect after login
+      navigate('/dashboard');
 
-      //  Redirect
-      window.location.href = '/';
     } catch (err) {
       setError(err.response?.data?.message || 'Login failed');
     }
