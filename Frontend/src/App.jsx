@@ -15,6 +15,8 @@ import TeacherQuizList from './pages/TeacherQuizList';
 import TeacherAssignments from './pages/TeacherAssignments';
 import AssignmentSubmissions from './pages/AssignmentSubmissions';
 import GradeSubmission from './pages/GradeSubmission';
+import MyCertificates from './pages/MyCertificates';
+import VerifyCertificate from './pages/VerifyCertificate';
 function App() {
   return (
     <Routes>
