@@ -3,17 +3,28 @@ import { Link } from 'react-router-dom';
 import api from '../services/api';
 
 function Dashboard() {
+  /* ================================
+     Common state
+  ================================ */
   const [courses, setCourses] = useState([]);
   const [error, setError] = useState('');
 
-  // Teacher dashboard state
+  /* ================================
+     Teacher dashboard state
+  ================================ */
   const [teacherDashboard, setTeacherDashboard] = useState(null);
   const [teacherError, setTeacherError] = useState('');
+
+  /* ================================
+     Admin dashboard state
+  ================================ */
+  const [adminDashboard, setAdminDashboard] = useState(null);
+  const [adminError, setAdminError] = useState('');
 
   const user = JSON.parse(localStorage.getItem('user'));
 
   /* ================================
-     Load all courses (existing logic)
+     Load all courses (ALL USERS)
   ================================ */
   useEffect(() => {
     api.get('/courses')
@@ -22,7 +33,7 @@ function Dashboard() {
   }, []);
 
   /* ================================
-     Load Teacher Dashboard (NEW)
+     Load Teacher Dashboard
   ================================ */
   useEffect(() => {
     if (user?.role !== 'teacher') return;
@@ -32,11 +43,24 @@ function Dashboard() {
       .catch(() => setTeacherError('Failed to load teacher dashboard'));
   }, [user]);
 
+  /* ================================
+     Load Admin Dashboard
+  ================================ */
+  useEffect(() => {
+    if (user?.role !== 'admin') return;
+
+    api.get('/dashboard/admin')
+      .then(res => setAdminDashboard(res.data))
+      .catch(() => setAdminError('Failed to load admin dashboard'));
+  }, [user]);
+
   return (
     <div>
       <h2>Dashboard</h2>
 
-      {/* General error */}
+      {/* ================================
+          GLOBAL ERROR
+      ================================ */}
       {error && <p style={{ color: 'red' }}>{error}</p>}
 
       {/* ================================
@@ -59,13 +83,12 @@ function Dashboard() {
       )}
 
       {/* ================================
-          TEACHER DASHBOARD VIEW (NEW)
+          TEACHER DASHBOARD VIEW
       ================================ */}
       {user?.role === 'teacher' && teacherDashboard && (
         <div style={{ marginTop: 30 }}>
           <h3>Teacher Dashboard</h3>
 
-          {/* Teacher Courses */}
           <h4>Your Courses</h4>
           {teacherDashboard.courses.length === 0 ? (
             <p>No courses created yet.</p>
@@ -79,17 +102,16 @@ function Dashboard() {
             </ul>
           )}
 
-          {/* Pending Assignments */}
           <p>
             <strong>Pending Assignments to Grade:</strong>{' '}
             {teacherDashboard.pendingAssignments}
           </p>
 
-          {/* Quiz Stats */}
           <p>
             <strong>Total Quiz Attempts:</strong>{' '}
             {teacherDashboard.quizStats.totalAttempts}
           </p>
+
           <p>
             <strong>Average Quiz Score:</strong>{' '}
             {teacherDashboard.quizStats.averageScore}
@@ -97,9 +119,37 @@ function Dashboard() {
         </div>
       )}
 
-      {/* Teacher dashboard error */}
       {teacherError && (
         <p style={{ color: 'red' }}>{teacherError}</p>
+      )}
+
+      {/* ================================
+          ADMIN DASHBOARD VIEW
+      ================================ */}
+      {user?.role === 'admin' && adminDashboard && (
+        <div style={{ marginTop: 30 }}>
+          <h3>Admin Dashboard</h3>
+
+          <h4>User Statistics</h4>
+          <p>Total Users: {adminDashboard.users.total}</p>
+          <p>Students: {adminDashboard.users.students}</p>
+          <p>Teachers: {adminDashboard.users.teachers}</p>
+
+          <h4>Course Statistics</h4>
+          <p>Total Courses: {adminDashboard.courses.total}</p>
+          <p>Published Courses: {adminDashboard.courses.published}</p>
+
+          <h4>Learning Activity</h4>
+          <p>Lesson Completions: {adminDashboard.activity.lessonCompletions}</p>
+          <p>Quiz Attempts: {adminDashboard.activity.quizAttempts}</p>
+
+          <h4>Revenue</h4>
+          <p>Total Revenue: {adminDashboard.revenue.total}</p>
+        </div>
+      )}
+
+      {adminError && (
+        <p style={{ color: 'red' }}>{adminError}</p>
       )}
 
       {/* ================================
