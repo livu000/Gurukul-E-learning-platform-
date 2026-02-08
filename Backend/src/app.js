@@ -3,6 +3,7 @@ const cors = require('cors');
 const authRoutes = require('./routes/auth.routes');
 const courseRoutes = require('./routes/course.routes');
 const assignmentRoutes = require('./routes/assignment.routes');
+const dashboardRoutes = require('./routes/dashboard.routes');
 const app = express();
 app.use(cors());
 app.use(express.json());
@@ -21,5 +22,5 @@ app.use('/api/quiz-attempts', require('./routes/quizAttempt.routes'));
 app.use('/api/quiz-submissions', require('./routes/quizSubmission.routes'));
 app.use('/api/assignments', assignmentRoutes);
 app.use("/api/certificates", require("./routes/certificate.routes"));
-
+app.use('/api/dashboard', dashboardRoutes);
 module.exports = app;
