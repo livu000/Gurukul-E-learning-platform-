@@ -1,4 +1,4 @@
-const { Enrollment, Lesson, Module } = require('../models');
+const { Enrollment, Lesson, Module, Quiz, QuizAttempt } = require('../models');
 
 /**
  * Ensure the current user is enrolled in the course
@@ -43,7 +43,18 @@ exports.ensureEnrolled = async (req, res, next) => {
 
       courseId = lesson.Module.course_id;
     }
+        /* ==============================
+       CASE 3: quizId → quiz → course  ✅ NEW
+    ============================== */
+    if (!courseId && req.body.quizId) {
+      const quiz = await Quiz.findByPk(req.body.quizId);
 
+      if (!quiz) {
+        return res.status(404).json({ message: 'Quiz not found' });
+      }
+
+      courseId = quiz.course_id;
+    }
     if (!courseId) {
       return res.status(400).json({
         message: 'Unable to determine course for enrollment check'
