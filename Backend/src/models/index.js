@@ -29,6 +29,7 @@ const AssignmentGrade = require('./assignmentGrade.model');
 // Certificate model
 // ==============================
 const Certificate = require('./certificate.model');
+const Enrollment = require('./enrollment.model');
 
 // ======================================================
 // ASSOCIATIONS
@@ -155,6 +156,22 @@ AssignmentGrade.belongsTo(AssignmentSubmission, {
   foreignKey: 'submission_id'
 });
 
+// User (Student) ↔ Enrollment
+User.hasMany(Enrollment, {
+  foreignKey: 'user_id'
+});
+Enrollment.belongsTo(User, {
+  foreignKey: 'user_id'
+});
+
+// Course ↔ Enrollment
+Course.hasMany(Enrollment, {
+  foreignKey: 'course_id'
+});
+Enrollment.belongsTo(Course, {
+  foreignKey: 'course_id'
+});
+
 // ======================================================
 // EXPORTS
 // ======================================================
@@ -181,5 +198,7 @@ module.exports = {
   AssignmentGrade,
 
   // Certificate
-  Certificate
+  Certificate,
+  Enrollment
 };
+
