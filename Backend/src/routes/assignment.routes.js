@@ -2,7 +2,7 @@ const router = require('express').Router();
 const controller = require('../controllers/assignment.controller');
 const { authenticate } = require('../middleware/auth.middleware');
 const { authorizeRoles } = require('../middleware/role.middleware');
-
+const { ensureEnrolled } = require('../middleware/enrollment.middleware');
 
 // Teacher
 
@@ -41,6 +41,7 @@ router.post(
   '/submit',
   authenticate,
   authorizeRoles('student'),
+  ensureEnrolled,
   controller.submitAssignment
 );
 

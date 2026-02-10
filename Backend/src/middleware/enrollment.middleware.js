@@ -1,4 +1,4 @@
-const { Enrollment, Lesson, Module, Quiz, QuizAttempt } = require('../models');
+const { Enrollment, Lesson, Module, Quiz, QuizAttempt,Assignment } = require('../models');
 
 /**
  * Ensure the current user is enrolled in the course
@@ -60,6 +60,35 @@ exports.ensureEnrolled = async (req, res, next) => {
         message: 'Unable to determine course for enrollment check'
       });
     }
+     /* ==============================
+   CASE 4: assignmentId → assignment → course  ✅ NEW
+============================== */
+if (!courseId && req.body.assignmentId) {
+  const assignment = await Assignment.findByPk(req.body.assignmentId);
+
+  if (!assignment) {
+    return res.status(404).json({ message: 'Assignment not found' });
+  }
+
+  courseId = assignment.course_id;
+}
+/* ==============================
+   CASE 5: quizAttemptId → quizAttempt → quiz → course  ✅ NEW
+============================== */
+if (!courseId && req.body.quizAttemptId) {
+  const attempt = await QuizAttempt.findByPk(req.body.quizAttemptId, {
+    include: {
+      model: Quiz,
+      attributes: ['course_id']
+    }
+  });
+
+  if (!attempt || !attempt.Quiz) {
+    return res.status(404).json({ message: 'Quiz attempt not found' });
+  }
+
+  courseId = attempt.Quiz.course_id;
+}
 
     /* ==============================
        Enrollment verification
