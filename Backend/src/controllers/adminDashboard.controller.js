@@ -13,12 +13,12 @@ const sequelize = require('../config/db');
  */
 exports.getAdminDashboard = async (req, res) => {
   try {
-    /* =====================================================
-       1️⃣ USER STATISTICS
+    /* 
+       1 USER STATISTICS
        - total users
        - students count
        - teachers count
-    ===================================================== */
+     */
     const userStats = await User.findOne({
       attributes: [
         [sequelize.fn('COUNT', sequelize.col('id')), 'total'],
@@ -46,11 +46,11 @@ exports.getAdminDashboard = async (req, res) => {
       teachers: Number(userStats?.teachers || 0)
     };
 
-    /* =====================================================
-       2️⃣ COURSE STATISTICS
+    /* 
+       2️ COURSE STATISTICS
        - total courses
        - published courses
-    ===================================================== */
+     */
     const courseStats = await Course.findOne({
       attributes: [
         [sequelize.fn('COUNT', sequelize.col('id')), 'total'],
@@ -70,11 +70,11 @@ exports.getAdminDashboard = async (req, res) => {
       published: Number(courseStats?.published || 0)
     };
 
-    /* =====================================================
+    /* 
        3️⃣ LEARNING ACTIVITY
        - lesson completions
        - quiz attempts
-    ===================================================== */
+     */
     const lessonCompletions = await LessonProgress.count({
       where: { status: 'completed' }
     });
@@ -86,17 +86,17 @@ exports.getAdminDashboard = async (req, res) => {
       quizAttempts
     };
 
-    /* =====================================================
-       4️⃣ REVENUE (PLACEHOLDER)
+    /* 
+       4️ REVENUE (PLACEHOLDER)
        Payments not implemented yet
-    ===================================================== */
+     */
     const revenue = {
       total: 0
     };
 
-    /* =====================================================
+    /* 
        FINAL RESPONSE (LOCKED CONTRACT)
-    ===================================================== */
+     */
     return res.json({
       users,
       courses,

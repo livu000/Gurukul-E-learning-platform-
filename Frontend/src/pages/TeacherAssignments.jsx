@@ -76,9 +76,9 @@ function TeacherAssignments() {
     <div style={{ maxWidth: 800, margin: '30px auto' }}>
       <h2>Assignments</h2>
 
-      {/* ===================== */}
+      
       {/* Assignment List */}
-      {/* ===================== */}
+     
       {loading && <p>Loading assignments...</p>}
 
       {!loading && assignments.length === 0 && (
@@ -112,9 +112,9 @@ function TeacherAssignments() {
 
       <hr style={{ margin: '30px 0' }} />
 
-      {/* ===================== */}
+      
       {/* Create Assignment */}
-      {/* ===================== */}
+      
       <h3>Create Assignment</h3>
 
       {error && <p style={{ color: 'red' }}>{error}</p>}

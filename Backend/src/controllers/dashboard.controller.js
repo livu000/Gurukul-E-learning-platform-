@@ -18,18 +18,18 @@ exports.getTeacherDashboard = async (req, res) => {
   try {
     const teacherId = req.user.id;
 
-    /* =====================================================
-       1️⃣ Courses created by teacher
-    ===================================================== */
+    /* 
+       1️ Courses created by teacher
+     */
     const courses = await Course.findAll({
       where: { teacher_id: teacherId },
       attributes: ['id', 'title'],
       raw: true
     });
 
-    /* =====================================================
+    /* 
        2️⃣ Student count per course (lesson_progress proxy)
-    ===================================================== */
+     */
     const studentCounts = await LessonProgress.findAll({
       attributes: [
         'course_id',
@@ -64,10 +64,10 @@ exports.getTeacherDashboard = async (req, res) => {
       studentCount: studentCountMap[course.id] || 0
     }));
 
-    /* =====================================================
-       3️⃣ Pending assignments to grade
+    /* 
+       3️ Pending assignments to grade
        (submission exists but no grade yet)
-    ===================================================== */
+     */
     const pendingAssignments = await AssignmentSubmission.count({
       include: [
         {
@@ -91,9 +91,9 @@ exports.getTeacherDashboard = async (req, res) => {
       }
     });
 
-    /* =====================================================
-       4️⃣ Quiz attempt statistics
-    ===================================================== */
+    /* 
+       4️ Quiz attempt statistics
+     */
     const quizStatsRaw = await QuizAttempt.findOne({
       attributes: [
         [sequelize.fn('COUNT', sequelize.col('QuizAttempt.id')), 'totalAttempts'],

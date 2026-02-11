@@ -3,38 +3,38 @@ import { Link } from 'react-router-dom';
 import api from '../services/api';
 
 function Dashboard() {
-  /* ================================
+  /* 
      Common state
-  ================================ */
+  */
   const [courses, setCourses] = useState([]);
   const [error, setError] = useState('');
 
-  /* ================================
+  /* 
      Teacher dashboard state
-  ================================ */
+  */
   const [teacherDashboard, setTeacherDashboard] = useState(null);
   const [teacherError, setTeacherError] = useState('');
 
-  /* ================================
+  /* 
      Admin dashboard state
-  ================================ */
+   */
   const [adminDashboard, setAdminDashboard] = useState(null);
   const [adminError, setAdminError] = useState('');
 
   const user = JSON.parse(localStorage.getItem('user'));
 
-  /* ================================
+  /* 
      Load all courses (ALL USERS)
-  ================================ */
+   */
   useEffect(() => {
     api.get('/courses')
       .then(res => setCourses(res.data))
       .catch(() => setError('Failed to load courses'));
   }, []);
 
-  /* ================================
+  /* 
      Load Teacher Dashboard
-  ================================ */
+   */
   useEffect(() => {
     if (user?.role !== 'teacher') return;
 
@@ -43,9 +43,9 @@ function Dashboard() {
       .catch(() => setTeacherError('Failed to load teacher dashboard'));
   }, [user]);
 
-  /* ================================
+  /* 
      Load Admin Dashboard
-  ================================ */
+   */
   useEffect(() => {
     if (user?.role !== 'admin') return;
 
@@ -58,23 +58,23 @@ function Dashboard() {
     <div>
       <h2>Dashboard</h2>
 
-      {/* ================================
+      {/* 
           GLOBAL ERROR
-      ================================ */}
+       */}
       {error && <p style={{ color: 'red' }}>{error}</p>}
 
-      {/* ================================
+      {/* 
           ROLE-BASED ACTIONS
-      ================================ */}
+       */}
       {(user?.role === 'admin' || user?.role === 'teacher') && (
         <button onClick={() => alert('Create Course UI goes here')}>
           Create Course
         </button>
       )}
 
-      {/* ================================
+      {/*
           STUDENT VIEW
-      ================================ */}
+       */}
       {user?.role === 'student' && (
         <div style={{ margin: '20px 0' }}>
           <h4>Student Actions</h4>
@@ -82,9 +82,9 @@ function Dashboard() {
         </div>
       )}
 
-      {/* ================================
+      {/* 
           TEACHER DASHBOARD VIEW
-      ================================ */}
+       */}
       {user?.role === 'teacher' && teacherDashboard && (
         <div style={{ marginTop: 30 }}>
           <h3>Teacher Dashboard</h3>

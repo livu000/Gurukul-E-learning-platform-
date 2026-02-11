@@ -9,7 +9,7 @@ exports.enrollInCourse = async (req, res) => {
     const userId = req.user.id;
     const courseId = req.params.courseId;
 
-    // 1️⃣ Validate course existence
+    // 1️ Validate course existence
     const course = await Course.findByPk(courseId);
     if (!course) {
       return res.status(404).json({
@@ -17,7 +17,7 @@ exports.enrollInCourse = async (req, res) => {
       });
     }
 
-    // 2️⃣ Prevent duplicate enrollment
+    // 2️ Prevent duplicate enrollment
     const existingEnrollment = await Enrollment.findOne({
       where: {
         user_id: userId,
@@ -31,7 +31,7 @@ exports.enrollInCourse = async (req, res) => {
       });
     }
 
-    // 3️⃣ Create enrollment
+    // 3️ Create enrollment
     const enrollment = await Enrollment.create({
       user_id: userId,
       course_id: courseId

@@ -12,9 +12,9 @@ function AssignmentSubmissions() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  // =========================
+  
   // Fetch submissions (React-correct)
-  // =========================
+  
   const fetchSubmissions = useCallback(async () => {
     try {
       const data = await getSubmissionsByAssignment(assignmentId);
@@ -31,9 +31,9 @@ function AssignmentSubmissions() {
     fetchSubmissions();
   }, [fetchSubmissions]);
 
-  // =========================
+  
   // Grade submission
-  // =========================
+
   const handleGrade = async (submissionId, marks, feedback) => {
     try {
       await gradeSubmission(submissionId, { marks, feedback });
@@ -63,9 +63,9 @@ function AssignmentSubmissions() {
   );
 }
 
-// =========================
+
 // Submission Card
-// =========================
+
 function SubmissionCard({ submission, onGrade }) {
   const [marks, setMarks] = useState(submission.grade?.marks || '');
   const [feedback, setFeedback] = useState(submission.grade?.feedback || '');
