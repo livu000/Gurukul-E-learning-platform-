@@ -29,3 +29,11 @@ export const getCourseProgress = async (courseId) => {
   const res = await api.get(`/progress/course/${courseId}`);
   return res.data;
 };
+
+// ==========================
+// GET COURSE BY ID
+// ==========================
+export const getCourseById = async (courseId) => {
+  const res = await api.get(`/courses/${courseId}`);
+  return res.data;
+};

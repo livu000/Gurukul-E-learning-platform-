@@ -2,6 +2,9 @@ import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { getModulesByCourse, getLessonsByModule } from '../services/course.service';
 import { issueCertificate } from '../services/certificate.service';
+import { createPayment, verifyPayment } from '../services/payment.service';
+import { getCourseById } from '../services/course.service';
+
 import api from '../services/api';
 
 function CourseView() {
@@ -12,10 +15,29 @@ function CourseView() {
   const [progress, setProgress] = useState(null);
   const [certificate, setCertificate] = useState(null);
   const [error, setError] = useState('');
-  const [loading, setLoading] = useState(true);
-
-  // Load modules
+  const [loading, setLoading] = useState(false);
+  const [paying, setPaying] = useState(false);
+  const [isEnrolled, setIsEnrolled] = useState(false);
+  const [course, setCourse] = useState(null);
   useEffect(() => {
+    const loadCourse = async () => {
+      try {
+        const data = await getCourseById(id);
+        setCourse(data);
+      } catch {
+        console.error('Failed to load course info');
+      }
+    };
+
+    loadCourse();
+  }, [id]);
+
+  // ==========================
+  // LOAD MODULES
+  // ==========================
+  useEffect(() => {
+    setLoading(true);
+
     getModulesByCourse(id)
       .then((data) => {
         setModules(data);
@@ -27,21 +49,37 @@ function CourseView() {
       });
   }, [id]);
 
-  // Load course progress
+  // ==========================
+  // LOAD COURSE PROGRESS
+  // (Detect enrollment safely)
+  // ==========================
   useEffect(() => {
     const fetchProgress = async () => {
       try {
         const res = await api.get(`/progress/course/${id}`);
+
         setProgress(res.data);
-      } catch (err) {
-        console.error('Failed to load progress', err);
+        // 🔥 ONLY paid courses use enrollment detection
+        if (course?.isPaid) {
+          setIsEnrolled(true);
+        }
+
+      } catch (error) {
+        if (error?.response?.status === 403) {
+          setIsEnrolled(false);
+        } else {
+          console.error('Progress error:', error);
+        }
       }
     };
+    if (course) {
+      fetchProgress();
+    }
+  }, [id, course]);
 
-    fetchProgress();
-  }, [id]);
-
-  // Lazy load lessons per module
+  // ==========================
+  // LOAD LESSONS PER MODULE
+  // ==========================
   const loadLessons = async (moduleId) => {
     if (lessons[moduleId]) return;
 
@@ -53,7 +91,9 @@ function CourseView() {
     }
   };
 
-  // Handle certificate generation
+  // ==========================
+  // CERTIFICATE GENERATION
+  // ==========================
   const handleGetCertificate = async () => {
     try {
       const data = await issueCertificate(id);
@@ -61,6 +101,30 @@ function CourseView() {
       alert('Certificate generated successfully!');
     } catch (err) {
       alert(err.response?.data?.message || 'Error generating certificate');
+    }
+  };
+
+  // ==========================
+  // PAYMENT HANDLER
+  // ==========================
+  const handleBuyCourse = async () => {
+    try {
+      setPaying(true);
+
+      const payment = await createPayment(id);
+
+      alert('Payment intent created. Verifying...');
+
+      await verifyPayment(payment.id);
+
+      alert('Payment successful! Course unlocked.');
+
+      window.location.reload();
+    } catch (err) {
+      console.error(err);
+      alert(err.response?.data?.message || 'Payment failed');
+    } finally {
+      setPaying(false);
     }
   };
 
@@ -74,8 +138,25 @@ function CourseView() {
 
       {error && <p style={{ color: 'red' }}>{error}</p>}
 
-      {/* Progress Bar */}
-      {progress && (
+      {/* ==========================
+          SMART BUY BUTTON
+      ========================== */}
+      <div style={{ marginBottom: 20 }}>
+        {!isEnrolled ? (
+          <button onClick={handleBuyCourse} disabled={paying}>
+            {paying ? 'Processing Payment...' : 'Buy Course'}
+          </button>
+        ) : (
+          <div style={{ color: 'green', fontWeight: 'bold' }}>
+            Purchased ✅
+          </div>
+        )}
+      </div>
+
+      {/* ==========================
+          PROGRESS BAR
+      ========================== */}
+      {isEnrolled && progress && (
         <div style={{ marginBottom: 25 }}>
           <p>
             Progress: {progress.completedLessons} / {progress.totalLessons} lessons
@@ -105,7 +186,6 @@ function CourseView() {
             {progress.percentage}%
           </p>
 
-          {/* Certificate Button */}
           {progress.percentage === 100 && (
             <div style={{ marginTop: 15 }}>
               <button onClick={handleGetCertificate}>
@@ -122,7 +202,9 @@ function CourseView() {
         </div>
       )}
 
-      {/* Modules & Lessons */}
+      {/* ==========================
+          MODULES & LESSONS
+      ========================== */}
       {modules.map((m) => (
         <div
           key={m.id}
@@ -139,9 +221,7 @@ function CourseView() {
             <ul>
               {lessons[m.id].map((l) => (
                 <li key={l.id}>
-                  <Link to={`/lessons/${l.id}`}>
-                    {l.title}
-                  </Link>
+                  <Link to={`/lessons/${l.id}`}>{l.title}</Link>
                 </li>
               ))}
             </ul>

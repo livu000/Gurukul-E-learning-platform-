@@ -17,6 +17,7 @@ import AssignmentSubmissions from './pages/AssignmentSubmissions';
 import GradeSubmission from './pages/GradeSubmission';
 import MyCertificates from './pages/MyCertificates';
 import VerifyCertificate from './pages/VerifyCertificate';
+import MyPayments from './pages/MyPayments';
 function App() {
   return (
     <Routes>
@@ -55,6 +56,7 @@ function App() {
       <Route path="/teacher/assignments/:assignmentId/submissions" element={<AssignmentSubmissions />}/>
       <Route path="/my-certificates" element={<MyCertificates />} />
       <Route path="/verify/:id" element={<VerifyCertificate />} />
+      <Route path="/my-payments" element={<MyPayments />} />
 
     </Routes>
   );
