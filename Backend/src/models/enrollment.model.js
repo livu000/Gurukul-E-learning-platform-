@@ -6,28 +6,30 @@ const Enrollment = sequelize.define(
   {
     id: {
       type: DataTypes.INTEGER.UNSIGNED,
-      autoIncrement: true,
-      primaryKey: true
+      primaryKey: true,
+      autoIncrement: true
     },
 
-    user_id: {
+    userId: {
       type: DataTypes.INTEGER.UNSIGNED,
-      allowNull: false
+      allowNull: false,
+      field: 'user_id'   // ✅ VERY IMPORTANT
     },
 
-    course_id: {
+    courseId: {
       type: DataTypes.INTEGER.UNSIGNED,
-      allowNull: false
+      allowNull: false,
+      field: 'course_id' // ✅ VERY IMPORTANT
     },
 
     status: {
-      type: DataTypes.ENUM('active', 'cancelled'),
+      type: DataTypes.STRING,
       defaultValue: 'active'
     },
 
-    enrolled_at: {
+    enrolledAt: {
       type: DataTypes.DATE,
-      defaultValue: DataTypes.NOW
+      field: 'enrolled_at'
     }
   },
   {

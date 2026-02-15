@@ -26,10 +26,18 @@ const AssignmentSubmission = require('./assignmentSubmission.model');
 const AssignmentGrade = require('./assignmentGrade.model');
 
 // ==============================
-// Certificate model
+// Certificate + Enrollment models
 // ==============================
 const Certificate = require('./certificate.model');
 const Enrollment = require('./enrollment.model');
+
+// ==============================
+// Payment models (FEATURE 5.1)
+// ==============================
+const Payment = require('./payment.model');
+const Transaction = require('./transaction.model');
+const Invoice = require('./invoice.model');
+
 
 // ======================================================
 // ASSOCIATIONS
@@ -61,13 +69,7 @@ Lesson.belongsTo(Module, {
   foreignKey: 'module_id'
 });
 
-// ---------- Lesson Progress (CRITICAL FIX) ----------
-/**
- * This association is REQUIRED for:
- * - Teacher Dashboard
- * - Student progress aggregation
- * - Course-level analytics
- */
+// ---------- Lesson Progress ----------
 Course.hasMany(LessonProgress, {
   foreignKey: 'course_id'
 });
@@ -75,7 +77,6 @@ LessonProgress.belongsTo(Course, {
   foreignKey: 'course_id'
 });
 
-// (Optional but safe — lesson-level tracking)
 Lesson.hasMany(LessonProgress, {
   foreignKey: 'lesson_id'
 });
@@ -156,7 +157,7 @@ AssignmentGrade.belongsTo(AssignmentSubmission, {
   foreignKey: 'submission_id'
 });
 
-// User (Student) ↔ Enrollment
+// ---------- Enrollment ----------
 User.hasMany(Enrollment, {
   foreignKey: 'user_id'
 });
@@ -164,13 +165,49 @@ Enrollment.belongsTo(User, {
   foreignKey: 'user_id'
 });
 
-// Course ↔ Enrollment
 Course.hasMany(Enrollment, {
   foreignKey: 'course_id'
 });
 Enrollment.belongsTo(Course, {
   foreignKey: 'course_id'
 });
+
+// ======================================================
+// 💳 PAYMENT ASSOCIATIONS (NEW)
+// ======================================================
+
+// User ↔ Payments
+User.hasMany(Payment, {
+  foreignKey: 'user_id'
+});
+Payment.belongsTo(User, {
+  foreignKey: 'user_id'
+});
+
+// Course ↔ Payments
+Course.hasMany(Payment, {
+  foreignKey: 'course_id'
+});
+Payment.belongsTo(Course, {
+  foreignKey: 'course_id'
+});
+
+// Payment ↔ Transactions
+Payment.hasMany(Transaction, {
+  foreignKey: 'payment_id'
+});
+Transaction.belongsTo(Payment, {
+  foreignKey: 'payment_id'
+});
+
+// Payment ↔ Invoice (1:1)
+Payment.hasOne(Invoice, {
+  foreignKey: 'payment_id'
+});
+Invoice.belongsTo(Payment, {
+  foreignKey: 'payment_id'
+});
+
 
 // ======================================================
 // EXPORTS
@@ -197,8 +234,12 @@ module.exports = {
   AssignmentSubmission,
   AssignmentGrade,
 
-  // Certificate
+  // Certificate + Enrollment
   Certificate,
-  Enrollment
-};
+  Enrollment,
 
+  // Payment
+  Payment,
+  Transaction,
+  Invoice
+};
