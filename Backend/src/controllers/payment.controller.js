@@ -6,6 +6,8 @@ const {
   Enrollment
 } = require('../models');
 
+const sequelize = require('../config/db');
+
 
 // ==========================================
 // CREATE PAYMENT INTENT
@@ -25,14 +27,14 @@ exports.createPayment = async (req, res) => {
       return res.status(404).json({ message: 'Course not found' });
     }
 
-    // ✅ VERY IMPORTANT FIX — camelCase property
+    // Course must be paid
     if (!course.isPaid) {
       return res.status(400).json({
         message: 'Free course — use enrollment directly'
       });
     }
 
-    // Check already enrolled
+    // Prevent duplicate enrollment
     const already = await Enrollment.findOne({
       where: { userId, courseId }
     });
@@ -41,7 +43,6 @@ exports.createPayment = async (req, res) => {
       return res.status(400).json({ message: 'Already enrolled' });
     }
 
-    // Create payment
     const payment = await Payment.create({
       userId,
       courseId,
@@ -59,23 +60,30 @@ exports.createPayment = async (req, res) => {
 
 
 // ==========================================
-// VERIFY PAYMENT (MOCK SUCCESS FLOW)
+// VERIFY PAYMENT (PRODUCTION SAFE WITH TX)
 // ==========================================
 exports.verifyPayment = async (req, res) => {
+  const t = await sequelize.transaction();
+
   try {
     const { paymentId, gatewayData } = req.body;
 
     if (!paymentId) {
+      await t.rollback();
       return res.status(400).json({ message: 'paymentId required' });
     }
 
-    const payment = await Payment.findByPk(paymentId);
+    const payment = await Payment.findByPk(paymentId, {
+      transaction: t
+    });
 
     if (!payment) {
+      await t.rollback();
       return res.status(404).json({ message: 'Payment not found' });
     }
 
     if (payment.status === 'success') {
+      await t.rollback();
       return res.status(400).json({
         message: 'Payment already verified'
       });
@@ -84,31 +92,44 @@ exports.verifyPayment = async (req, res) => {
     // 1️⃣ Update payment
     payment.status = 'success';
     payment.providerPaymentId = gatewayData?.payment_id || null;
-    await payment.save();
 
-    // 2️⃣ Log transaction
-    await Transaction.create({
-      paymentId: payment.id,
-      gatewayResponse: gatewayData || {},
-      status: 'success'
-    });
+    await payment.save({ transaction: t });
+
+    // 2️⃣ Create transaction log
+    await Transaction.create(
+      {
+        paymentId: payment.id,
+        gatewayResponse: gatewayData || {},
+        status: 'success'
+      },
+      { transaction: t }
+    );
 
     // 3️⃣ Auto enrollment
-    await Enrollment.create({
-      userId: payment.userId,
-      courseId: payment.courseId
-    });
+    await Enrollment.create(
+      {
+        userId: payment.userId,
+        courseId: payment.courseId
+      },
+      { transaction: t }
+    );
 
-    // 4️⃣ Create invoice
+    // 4️⃣ Create invoice (issued_at auto handled by DB)
     const invoiceNumber = `INV-${Date.now()}`;
 
-    await Invoice.create({
-      paymentId: payment.id,
-      invoiceNumber,
-      userId: payment.userId,
-      courseId: payment.courseId,
-      amount: payment.amount
-    });
+    await Invoice.create(
+      {
+        paymentId: payment.id,
+        invoiceNumber,
+        userId: payment.userId,
+        courseId: payment.courseId,
+        amount: payment.amount
+      },
+      { transaction: t }
+    );
+
+    // ✅ Commit transaction
+    await t.commit();
 
     return res.json({
       message: 'Payment verified and enrollment created',
@@ -116,8 +137,13 @@ exports.verifyPayment = async (req, res) => {
     });
 
   } catch (err) {
-    console.error('verifyPayment error:', err);
-    return res.status(500).json({ message: 'Failed to verify payment' });
+    console.error('verifyPayment TX error:', err);
+
+    await t.rollback();
+
+    return res.status(500).json({
+      message: 'Failed to verify payment'
+    });
   }
 };
 
@@ -138,6 +164,8 @@ exports.getMyPayments = async (req, res) => {
 
   } catch (err) {
     console.error('getMyPayments error:', err);
-    return res.status(500).json({ message: 'Failed to fetch payments' });
+    return res.status(500).json({
+      message: 'Failed to fetch payments'
+    });
   }
 };
