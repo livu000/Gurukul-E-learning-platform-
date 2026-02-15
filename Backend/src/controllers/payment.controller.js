@@ -43,6 +43,7 @@ exports.createPayment = async (req, res) => {
       return res.status(400).json({ message: 'Already enrolled' });
     }
 
+    // Create payment intent
     const payment = await Payment.create({
       userId,
       courseId,
@@ -60,7 +61,7 @@ exports.createPayment = async (req, res) => {
 
 
 // ==========================================
-// VERIFY PAYMENT (PRODUCTION SAFE WITH TX)
+// VERIFY PAYMENT (TX + IDEMPOTENCY SAFE)
 // ==========================================
 exports.verifyPayment = async (req, res) => {
   const t = await sequelize.transaction();
@@ -82,11 +83,27 @@ exports.verifyPayment = async (req, res) => {
       return res.status(404).json({ message: 'Payment not found' });
     }
 
+    // Prevent double verification
     if (payment.status === 'success') {
       await t.rollback();
       return res.status(400).json({
         message: 'Payment already verified'
       });
+    }
+
+    // 🔒 IDEMPOTENCY PROTECTION (Gateway duplicate webhook guard)
+    if (gatewayData?.payment_id) {
+      const existing = await Payment.findOne({
+        where: { providerPaymentId: gatewayData.payment_id },
+        transaction: t
+      });
+
+      if (existing) {
+        await t.rollback();
+        return res.status(409).json({
+          message: 'Duplicate gateway verification detected'
+        });
+      }
     }
 
     // 1️⃣ Update payment
@@ -95,7 +112,7 @@ exports.verifyPayment = async (req, res) => {
 
     await payment.save({ transaction: t });
 
-    // 2️⃣ Create transaction log
+    // 2️⃣ Transaction log
     await Transaction.create(
       {
         paymentId: payment.id,
@@ -114,7 +131,7 @@ exports.verifyPayment = async (req, res) => {
       { transaction: t }
     );
 
-    // 4️⃣ Create invoice (issued_at auto handled by DB)
+    // 4️⃣ Invoice creation
     const invoiceNumber = `INV-${Date.now()}`;
 
     await Invoice.create(
@@ -128,7 +145,7 @@ exports.verifyPayment = async (req, res) => {
       { transaction: t }
     );
 
-    // ✅ Commit transaction
+    // ✅ Commit all DB changes
     await t.commit();
 
     return res.json({
