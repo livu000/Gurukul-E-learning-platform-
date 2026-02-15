@@ -37,6 +37,7 @@ const Enrollment = require('./enrollment.model');
 const Payment = require('./payment.model');
 const Transaction = require('./transaction.model');
 const Invoice = require('./invoice.model');
+const AuditLog = require('./auditLog.model');
 
 
 // ======================================================
@@ -241,5 +242,6 @@ module.exports = {
   // Payment
   Payment,
   Transaction,
-  Invoice
+  Invoice,
+  AuditLog
 };

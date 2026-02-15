@@ -29,4 +29,6 @@ app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/dashboard', adminDashboardRoutes);
 app.use('/api/enrollments', enrollmentRoutes);
 app.use('/api/payments', require('./routes/payment.routes'));
+app.use('/api/audit-logs', require('./routes/audit.routes'));
+
 module.exports = app;
