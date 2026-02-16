@@ -3,7 +3,6 @@ import { Link, useNavigate } from "react-router-dom";
 function Landing() {
 
   const navigate = useNavigate();
-
   const accessToken = localStorage.getItem("accessToken");
 
   const handleEnter = () => {
@@ -16,65 +15,82 @@ function Landing() {
 
   return (
     <div className="landing-wrapper">
-    <div className="landing-container">
 
-      {/* ======================
-          HEADER
-      ====================== */}
-      <header className="landing-header">
-        <h1>Gurukul</h1>
-        <div>
-          <Link to="/login" className="btn-outline">
-            Login
-          </Link>
-        </div>
-      </header>
+      <div className="landing-container">
 
-      {/* ======================
-          HERO SECTION
-      ====================== */}
-      <section className="landing-hero">
-        <h2>Minimal Learning Platform</h2>
+        {/* ======================
+            HEADER
+        ====================== */}
+        <header className="landing-header">
+          <h1>Gurukul</h1>
 
-        <p>
-          Courses • Lessons • Quizzes • Assignments • Certificates
-        </p>
+          <div>
+            <Link to="/login" className="btn btn-outline">
+              Login
+            </Link>
+          </div>
+        </header>
 
-        <button className="btn-primary" onClick={handleEnter}>
-          Enter Platform
-        </button>
-      </section>
 
-      {/* ======================
-          FEATURES
-      ====================== */}
-      <section className="landing-features">
+        {/* ======================
+            HERO SECTION
+        ====================== */}
+        <section className="landing-hero">
 
-        <div className="feature-card">
-          <h3>Structured Courses</h3>
-          <p>Module-based learning system connected to backend curriculum.</p>
-        </div>
+          <h2>Minimal Learning Platform</h2>
 
-        <div className="feature-card">
-          <h3>Progress Tracking</h3>
-          <p>Backend driven lesson completion & certification flow.</p>
-        </div>
+          <p className="card-muted">
+            Courses • Lessons • Quizzes • Assignments • Certificates
+          </p>
 
-        <div className="feature-card">
-          <h3>Teacher & Student Roles</h3>
-          <p>Role-based experience powered by JWT authentication.</p>
-        </div>
+          <button
+            className="btn btn-primary"
+            onClick={handleEnter}
+          >
+            Enter Platform
+          </button>
 
-      </section>
+        </section>
 
-      {/* ======================
-          FOOTER
-      ====================== */}
-      <footer className="landing-footer">
-        <p>Gurukul LMS — Minimal Enterprise System</p>
-      </footer>
 
-    </div>
+        {/* ======================
+            FEATURES GRID
+        ====================== */}
+        <section className="landing-features grid">
+
+          <div className="card">
+            <h3>Structured Courses</h3>
+            <p className="card-muted">
+              Module-based learning system connected to backend curriculum.
+            </p>
+          </div>
+
+          <div className="card">
+            <h3>Progress Tracking</h3>
+            <p className="card-muted">
+              Backend driven lesson completion & certification flow.
+            </p>
+          </div>
+
+          <div className="card">
+            <h3>Teacher & Student Roles</h3>
+            <p className="card-muted">
+              Role-based experience powered by JWT authentication.
+            </p>
+          </div>
+
+        </section>
+
+
+        {/* ======================
+            FOOTER
+        ====================== */}
+        <footer className="landing-footer">
+          <p>Gurukul LMS — Minimal Enterprise System</p>
+        </footer>
+
+      </div>
+
     </div>
   );
 }

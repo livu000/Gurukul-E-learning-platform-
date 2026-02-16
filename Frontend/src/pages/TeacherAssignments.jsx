@@ -5,12 +5,13 @@ import {
   getAssignmentsByCourse
 } from '../services/assignment.service';
 
+import PageHeader from '../components/common/PageHeader';
+import SkeletonCard from '../components/common/SkeletonCard';
+
 function TeacherAssignments() {
+
   const { courseId } = useParams();
 
-  // =========================
-  // State
-  // =========================
   const [assignments, setAssignments] = useState([]);
 
   const [title, setTitle] = useState('');
@@ -22,15 +23,13 @@ function TeacherAssignments() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
 
-  // =========================
-  // Load assignments
-  // =========================
+  /* =========================
+     LOAD ASSIGNMENTS
+  ========================= */
   const fetchAssignments = useCallback(async () => {
     try {
       const data = await getAssignmentsByCourse(courseId);
       setAssignments(data);
-    } catch {
-      setAssignments([]);
     } finally {
       setLoading(false);
     }
@@ -40,9 +39,9 @@ function TeacherAssignments() {
     fetchAssignments();
   }, [fetchAssignments]);
 
-  // =========================
-  // Create assignment
-  // =========================
+  /* =========================
+     CREATE ASSIGNMENT
+  ========================= */
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
@@ -59,14 +58,13 @@ function TeacherAssignments() {
 
       setSuccess('Assignment created successfully');
 
-      // Reset form
       setTitle('');
       setDescription('');
       setMaxMarks('');
       setDueDate('');
 
-      // Reload list
       fetchAssignments();
+
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to create assignment');
     }
@@ -74,88 +72,118 @@ function TeacherAssignments() {
 
   return (
     <div className="page">
-      <h2>Assignments</h2>
 
-      
-      {/* Assignment List */}
-     
-      {loading && <p>Loading assignments...</p>}
+      <PageHeader title="Assignments" />
 
-      {!loading && assignments.length === 0 && (
-        <p>No assignments created yet.</p>
-      )}
+      {error && <p className="form-error">{error}</p>}
+      {success && <p className="form-success">{success}</p>}
 
-      {assignments.map((a) => (
-        <div
-          key={a.id}
-          style={{
-            border: '1px solid #ccc',
-            padding: 12,
-            marginBottom: 12,
-            borderRadius: 6
-          }}
-        >
-          <h4>{a.title}</h4>
-          <p>Max Marks: {a.maxMarks}</p>
-          <p>
-            Due Date:{' '}
-            {a.dueDate
-              ? new Date(a.dueDate).toLocaleDateString()
-              : 'No due date'}
-          </p>
+      {/* =========================
+          ASSIGNMENT LIST
+      ========================= */}
+      <div className="grid">
 
-          <Link to={`/teacher/assignments/${a.id}/submissions`}>
-            View Submissions
-          </Link>
-        </div>
-      ))}
+        {loading && (
+          <>
+            <SkeletonCard />
+            <SkeletonCard />
+            <SkeletonCard />
+          </>
+        )}
 
-      <hr style={{ margin: '30px 0' }} />
+        {!loading && assignments.length === 0 && (
+          <p>No assignments created yet.</p>
+        )}
 
-      
-      {/* Create Assignment */}
-      
-      <h3>Create Assignment</h3>
+        {!loading && assignments.map((a) => (
+          <div key={a.id} className="card">
 
-      {error && <p style={{ color: 'red' }}>{error}</p>}
-      {success && <p style={{ color: 'green' }}>{success}</p>}
+            <h4>{a.title}</h4>
 
-      <form onSubmit={handleSubmit}>
-        <input
-          type="text"
-          placeholder="Assignment title"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          required
-        />
-        <br /><br />
+            <p className="card-muted">
+              Max Marks: {a.maxMarks}
+            </p>
 
-        <textarea
-          placeholder="Description"
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-          rows={4}
-        />
-        <br /><br />
+            {a.dueDate && (
+              <span className="badge badge-info">
+                Due: {new Date(a.dueDate).toLocaleDateString()}
+              </span>
+            )}
 
-        <input
-          type="number"
-          placeholder="Max Marks"
-          value={maxMarks}
-          onChange={(e) => setMaxMarks(e.target.value)}
-          required
-        />
-        <br /><br />
+            <div className="card-actions">
+              <Link
+                to={`/teacher/assignments/${a.id}/submissions`}
+                className="btn btn-secondary"
+              >
+                View Submissions
+              </Link>
+            </div>
 
-        <input
-          type="datetime-local"
-          value={dueDate}
-          onChange={(e) => setDueDate(e.target.value)}
-        />
-        <br /><br />
+          </div>
+        ))}
 
-        <button type="submit">Create Assignment</button>
-      </form>
+      </div>
+
+      {/* =========================
+          CREATE FORM
+      ========================= */}
+      <div className="card">
+
+        <h3>Create Assignment</h3>
+
+        <form onSubmit={handleSubmit}>
+
+          <div className="form-group">
+            <label className="form-label">Title</label>
+            <input
+              className="form-input"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              required
+            />
+          </div>
+
+          <div className="form-group">
+            <label className="form-label">Description</label>
+            <textarea
+              className="form-textarea"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+            />
+          </div>
+
+          <div className="form-grid">
+
+            <div className="form-group">
+              <label className="form-label">Max Marks</label>
+              <input
+                className="form-input"
+                type="number"
+                value={maxMarks}
+                onChange={(e) => setMaxMarks(e.target.value)}
+              />
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">Due Date</label>
+              <input
+                className="form-input"
+                type="datetime-local"
+                value={dueDate}
+                onChange={(e) => setDueDate(e.target.value)}
+              />
+            </div>
+
+          </div>
+
+          <button className="btn btn-primary" type="submit">
+            Create Assignment
+          </button>
+
+        </form>
+
+      </div>
+
     </div>
   );
 }

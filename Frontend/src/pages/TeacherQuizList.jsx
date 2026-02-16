@@ -1,32 +1,92 @@
 import { useEffect, useState } from 'react';
 import api from '../services/api';
 
+import PageHeader from '../components/common/PageHeader';
+import SkeletonCard from '../components/common/SkeletonCard';
+
 function TeacherQuizList() {
+
   const [quizzes, setQuizzes] = useState([]);
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(true);
 
+  /* =========================
+     LOAD QUIZZES
+  ========================= */
   useEffect(() => {
-    api.get('/quizzes/teacher')
-      .then(res => setQuizzes(res.data))
-      .catch(() => setError('Failed to load quizzes'));
+
+    const loadQuizzes = async () => {
+      try {
+        const res = await api.get('/quizzes/teacher');
+        setQuizzes(res.data);
+      } catch {
+        setError('Failed to load quizzes');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadQuizzes();
+
   }, []);
 
   return (
     <div className="page">
-      <h2>My Quizzes</h2>
 
-      {error && <p style={{ color: 'red' }}>{error}</p>}
-      {quizzes.length === 0 && <p>No quizzes created yet.</p>}
+      <PageHeader title="My Quizzes" />
 
-      <ul>
-        {quizzes.map(q => (
-          <li key={q.id} style={{ marginBottom: 10 }}>
-            <strong>{q.title}</strong><br />
-            Total Marks: {q.totalMarks}<br />
-            Status: {q.isPublished ? 'Published' : 'Draft'}
-          </li>
+      {error && <p className="form-error">{error}</p>}
+
+      {/* =========================
+          GRID LAYOUT
+      ========================= */}
+      <div className="grid">
+
+        {/* =========================
+            SKELETON LOADING
+        ========================= */}
+        {loading && (
+          <>
+            <SkeletonCard />
+            <SkeletonCard />
+            <SkeletonCard />
+          </>
+        )}
+
+        {/* =========================
+            EMPTY STATE
+        ========================= */}
+        {!loading && quizzes.length === 0 && (
+          <p>No quizzes created yet.</p>
+        )}
+
+        {/* =========================
+            QUIZ CARDS
+        ========================= */}
+        {!loading && quizzes.map((q) => (
+          <div key={q.id} className="card">
+
+            <h4>{q.title}</h4>
+
+            <p className="card-muted">
+              Total Marks: {q.totalMarks}
+            </p>
+
+            <span
+              className={
+                q.isPublished
+                  ? "badge badge-success"
+                  : "badge badge-warning"
+              }
+            >
+              {q.isPublished ? 'Published' : 'Draft'}
+            </span>
+
+          </div>
         ))}
-      </ul>
+
+      </div>
+
     </div>
   );
 }

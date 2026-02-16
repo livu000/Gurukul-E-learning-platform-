@@ -4,17 +4,21 @@ import {
   getSubmissionsByAssignment,
   gradeSubmission
 } from '../services/assignment.service';
+import PageHeader from '../components/common/PageHeader';
+import SkeletonCard from '../components/common/SkeletonCard';
 
 function AssignmentSubmissions() {
+
   const { assignmentId } = useParams();
 
   const [submissions, setSubmissions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  
-  // Fetch submissions (React-correct)
-  
+  /* =========================
+     FETCH SUBMISSIONS
+  ========================= */
+
   const fetchSubmissions = useCallback(async () => {
     try {
       const data = await getSubmissionsByAssignment(assignmentId);
@@ -31,54 +35,70 @@ function AssignmentSubmissions() {
     fetchSubmissions();
   }, [fetchSubmissions]);
 
-  
-  // Grade submission
+  /* =========================
+     GRADE HANDLER
+  ========================= */
 
   const handleGrade = async (submissionId, marks, feedback) => {
     try {
       await gradeSubmission(submissionId, { marks, feedback });
-      fetchSubmissions(); // refresh after grading
+      fetchSubmissions();
     } catch {
       alert('Failed to submit grade');
     }
   };
 
-  if (loading) return <p>Loading submissions...</p>;
-  if (error) return <p style={{ color: 'red' }}>{error}</p>;
-
   return (
-    <div style={{ maxWidth: 900, margin: '30px auto' }}>
-      <h2>Assignment Submissions</h2>
+    <div className="page">
 
-      {submissions.length === 0 && <p>No submissions yet.</p>}
+      <PageHeader title="Assignment Submissions" />
 
-      {submissions.map((s) => (
-        <SubmissionCard
-          key={s.id}
-          submission={s}
-          onGrade={handleGrade}
-        />
-      ))}
+      {error && <p className="form-error">{error}</p>}
+
+      {/* =========================
+          SKELETON LOADING
+      ========================= */}
+      {loading && (
+        <div className="grid">
+          <SkeletonCard />
+          <SkeletonCard />
+          <SkeletonCard />
+        </div>
+      )}
+
+      {!loading && submissions.length === 0 && (
+        <p>No submissions yet.</p>
+      )}
+
+      {!loading && (
+        <div className="grid">
+          {submissions.map((s) => (
+            <SubmissionCard
+              key={s.id}
+              submission={s}
+              onGrade={handleGrade}
+            />
+          ))}
+        </div>
+      )}
+
     </div>
   );
 }
 
 
-// Submission Card
+/* ==================================================
+   ENTERPRISE SUBMISSION CARD
+================================================== */
 
 function SubmissionCard({ submission, onGrade }) {
+
   const [marks, setMarks] = useState(submission.grade?.marks || '');
   const [feedback, setFeedback] = useState(submission.grade?.feedback || '');
 
   return (
-    <div
-      style={{
-        border: '1px solid #ccc',
-        padding: 15,
-        marginBottom: 15,
-        borderRadius: 6
-      }}
-    >
+    <div className="card">
+
       <h4>Student: {submission.student?.name || 'Unknown'}</h4>
 
       <p>
@@ -87,35 +107,38 @@ function SubmissionCard({ submission, onGrade }) {
       </p>
 
       <p><strong>Submission:</strong></p>
-      <p style={{ background: '#f9f9f9', padding: 10 }}>
-        {submission.answerText}
-      </p>
 
-      <hr />
+      <div className="card-muted">
+        {submission.answerText || submission.content}
+      </div>
 
-      <input
-        type="number"
-        placeholder="Marks"
-        value={marks}
-        onChange={(e) => setMarks(e.target.value)}
-      />
-      <br /><br />
+      <div className="form-group">
+        <label className="form-label">Marks</label>
+        <input
+          className="form-input"
+          type="number"
+          value={marks}
+          onChange={(e) => setMarks(e.target.value)}
+        />
+      </div>
 
-      <textarea
-        placeholder="Feedback"
-        value={feedback}
-        onChange={(e) => setFeedback(e.target.value)}
-        rows={3}
-      />
-      <br /><br />
+      <div className="form-group">
+        <label className="form-label">Feedback</label>
+        <textarea
+          className="form-textarea"
+          rows={3}
+          value={feedback}
+          onChange={(e) => setFeedback(e.target.value)}
+        />
+      </div>
 
       <button
-        onClick={() =>
-          onGrade(submission.id, marks, feedback)
-        }
+        className="btn btn-primary"
+        onClick={() => onGrade(submission.id, marks, feedback)}
       >
         Save Grade
       </button>
+
     </div>
   );
 }

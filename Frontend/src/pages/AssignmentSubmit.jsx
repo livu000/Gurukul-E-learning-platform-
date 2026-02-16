@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { submitAssignment } from '../services/assignment.service';
+import PageHeader from '../components/common/PageHeader';
 
 function AssignmentSubmit() {
   const { assignmentId } = useParams();
@@ -9,10 +10,16 @@ function AssignmentSubmit() {
   const [answerText, setAnswerText] = useState('');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [submitting, setSubmitting] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    if (submitting) return;
+
+    setSubmitting(true);
     setError('');
+    setSuccess('');
 
     try {
       await submitAssignment({
@@ -22,30 +29,50 @@ function AssignmentSubmit() {
       });
 
       setSuccess('Assignment submitted successfully');
+
       setTimeout(() => navigate(-1), 1500);
     } catch (err) {
       setError(err.response?.data?.message || 'Submission failed');
+    } finally {
+      setSubmitting(false);
     }
   };
 
   return (
     <div className="page">
-      <h2>Submit Assignment</h2>
+      <PageHeader title="Submit Assignment" />
 
-      {error && <p style={{ color: 'red' }}>{error}</p>}
-      {success && <p style={{ color: 'green' }}>{success}</p>}
+      {/* =========================
+          ENTERPRISE CARD WRAPPER
+      ========================= */}
+      <div className="card">
 
-      <form onSubmit={handleSubmit}>
-        <textarea
-          rows={8}
-          placeholder="Write your answer here..."
-          value={answerText}
-          onChange={e => setAnswerText(e.target.value)}
-          required
-        />
-        <br /><br />
-        <button type="submit">Submit</button>
-      </form>
+        {error && <p className="form-error">{error}</p>}
+        {success && <p className="form-success">{success}</p>}
+
+        <form onSubmit={handleSubmit}>
+          <div className="form-group">
+            <label className="form-label">Your Answer</label>
+
+            <textarea
+              className="form-textarea"
+              rows={8}
+              value={answerText}
+              onChange={(e) => setAnswerText(e.target.value)}
+              required
+            />
+          </div>
+
+          <button
+            className="btn btn-primary"
+            type="submit"
+            disabled={submitting}
+          >
+            {submitting ? 'Submitting...' : 'Submit'}
+          </button>
+        </form>
+
+      </div>
     </div>
   );
 }

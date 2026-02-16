@@ -5,18 +5,24 @@ import {
   updateCourseStatus
 } from '../services/course.service';
 
+import PageHeader from '../components/common/PageHeader';
+import SkeletonCard from '../components/common/SkeletonCard';
+
 function CourseList() {
   const [courses, setCourses] = useState([]);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
 
-  // Logged-in user (if any)
   const user = JSON.parse(localStorage.getItem('user'));
 
+  // =========================
+  // LOAD COURSES
+  // =========================
   const loadCourses = async () => {
     try {
       const res = await getCourses();
       setCourses(res.data);
+      setError('');
     } catch (err) {
       console.error(err);
       setError('Failed to load courses');
@@ -29,72 +35,121 @@ function CourseList() {
     loadCourses();
   }, []);
 
-  // Teacher submits course
+  // =========================
+  // TEACHER SUBMIT
+  // =========================
   const handleSubmitForReview = async (id) => {
     try {
       await submitCourse(id);
-      alert('Course submitted for review');
       loadCourses();
     } catch (err) {
       alert(err.response?.data?.message || 'Action failed');
     }
   };
 
-  // Admin approves/rejects
+  // =========================
+  // ADMIN STATUS UPDATE
+  // =========================
   const handleUpdateStatus = async (id, status) => {
     try {
       await updateCourseStatus(id, status);
-      alert(`Course ${status}`);
       loadCourses();
     } catch (err) {
       alert(err.response?.data?.message || 'Action failed');
     }
   };
 
-  if (loading) return <p>Loading courses...</p>;
+  // =========================
+  // ENTERPRISE SKELETON LOADER
+  // =========================
+  if (loading) {
+    return (
+      <div className="page">
+        <PageHeader title="Course List" />
+        <div className="grid">
+          <SkeletonCard />
+          <SkeletonCard />
+          <SkeletonCard />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="page">
-      <h2>Courses</h2>
+      <PageHeader title="Course List" />
 
-      {error && <p style={{ color: 'red' }}>{error}</p>}
+      {error && <p className="form-error">{error}</p>}
 
       {courses.length === 0 && <p>No courses available</p>}
 
-      <ul>
-        {courses.map(course => (
-          <li key={course.id} style={{ marginBottom: 20 }}>
+      {/* =========================
+          ENTERPRISE GRID SYSTEM
+      ========================= */}
+      <div className="grid">
+        {courses.map((course) => (
+          <div key={course.id} className="card">
             <h4>{course.title}</h4>
+
             <p>{course.description}</p>
-            <small>Status: {course.status}</small>
-            <br /><br />
 
-            {/* TEACHER ACTION */}
-            {user?.role === 'teacher' && course.status === 'draft' && (
-              <button onClick={() => handleSubmitForReview(course.id)}>
-                Submit for Review
-              </button>
-            )}
+            {/* =========================
+                STATUS BADGE SYSTEM
+            ========================= */}
+            <span
+              className={`badge ${
+                course.status === 'published'
+                  ? 'badge-success'
+                  : course.status === 'review'
+                  ? 'badge-warning'
+                  : 'badge-neutral'
+              }`}
+            >
+              {course.status}
+            </span>
 
-            {/* ADMIN ACTION */}
-            {user?.role === 'admin' && course.status === 'review' && (
-              <>
+            {/* =========================
+                ROLE BASED ACTIONS
+            ========================= */}
+            <div style={{ marginTop: 12 }}>
+
+              {/* TEACHER ACTION */}
+              {user?.role === 'teacher' && course.status === 'draft' && (
                 <button
-                  onClick={() => handleUpdateStatus(course.id, 'published')}
+                  className="btn btn-primary"
+                  onClick={() => handleSubmitForReview(course.id)}
                 >
-                  Approve
+                  Submit for Review
                 </button>
-                &nbsp;
-                <button
-                  onClick={() => handleUpdateStatus(course.id, 'draft')}
-                >
-                  Reject
-                </button>
-              </>
-            )}
-          </li>
+              )}
+
+              {/* ADMIN ACTION */}
+              {user?.role === 'admin' && course.status === 'review' && (
+                <>
+                  <button
+                    className="btn btn-success"
+                    onClick={() =>
+                      handleUpdateStatus(course.id, 'published')
+                    }
+                  >
+                    Approve
+                  </button>
+
+                  <button
+                    className="btn btn-danger"
+                    onClick={() =>
+                      handleUpdateStatus(course.id, 'draft')
+                    }
+                    style={{ marginLeft: 8 }}
+                  >
+                    Reject
+                  </button>
+                </>
+              )}
+            </div>
+          </div>
         ))}
-      </ul>
+      </div>
     </div>
   );
 }

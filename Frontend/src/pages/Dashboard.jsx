@@ -1,171 +1,233 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../services/api';
+import PageHeader from '../components/common/PageHeader';
+import SkeletonCard from '../components/common/SkeletonCard';
 
 function Dashboard() {
-  /* 
-     Common state
-  */
-  const [courses, setCourses] = useState([]);
-  const [error, setError] = useState('');
-
-  /* 
-     Teacher dashboard state
-  */
-  const [teacherDashboard, setTeacherDashboard] = useState(null);
-  const [teacherError, setTeacherError] = useState('');
-
-  /* 
-     Admin dashboard state
-   */
-  const [adminDashboard, setAdminDashboard] = useState(null);
-  const [adminError, setAdminError] = useState('');
 
   const user = JSON.parse(localStorage.getItem('user'));
 
-  /* 
-     Load all courses (ALL USERS)
-   */
+  /* =========================
+     STATE
+  ========================= */
+
+  const [courses, setCourses] = useState([]);
+  const [error, setError] = useState('');
+  const [loadingCourses, setLoadingCourses] = useState(true);
+
+  const [teacherDashboard, setTeacherDashboard] = useState(null);
+  const [teacherError, setTeacherError] = useState('');
+  const [loadingTeacher, setLoadingTeacher] = useState(user?.role === 'teacher');
+
+  const [adminDashboard, setAdminDashboard] = useState(null);
+  const [adminError, setAdminError] = useState('');
+  const [loadingAdmin, setLoadingAdmin] = useState(user?.role === 'admin');
+
+  /* =========================
+     LOAD COURSES
+  ========================= */
+
   useEffect(() => {
     api.get('/courses')
       .then(res => setCourses(res.data))
-      .catch(() => setError('Failed to load courses'));
+      .catch(() => setError('Failed to load courses'))
+      .finally(() => setLoadingCourses(false));
   }, []);
 
-  /* 
-     Load Teacher Dashboard
-   */
+  /* =========================
+     TEACHER DASHBOARD
+     ✔ NO setState in early return
+  ========================= */
+
   useEffect(() => {
     if (user?.role !== 'teacher') return;
 
     api.get('/dashboard/teacher')
       .then(res => setTeacherDashboard(res.data))
-      .catch(() => setTeacherError('Failed to load teacher dashboard'));
+      .catch(() => setTeacherError('Failed to load teacher dashboard'))
+      .finally(() => setLoadingTeacher(false));
+
   }, [user]);
 
-  /* 
-     Load Admin Dashboard
-   */
+  /* =========================
+     ADMIN DASHBOARD
+  ========================= */
+
   useEffect(() => {
     if (user?.role !== 'admin') return;
 
     api.get('/dashboard/admin')
       .then(res => setAdminDashboard(res.data))
-      .catch(() => setAdminError('Failed to load admin dashboard'));
+      .catch(() => setAdminError('Failed to load admin dashboard'))
+      .finally(() => setLoadingAdmin(false));
+
   }, [user]);
 
   return (
-    <div>
-      <h2>Dashboard</h2>
+    <div className="page">
 
-      {/* 
-          GLOBAL ERROR
-       */}
-      {error && <p style={{ color: 'red' }}>{error}</p>}
+      <PageHeader title="Dashboard" />
 
-      {/* 
-          ROLE-BASED ACTIONS
-       */}
+      {error && <p className="form-error">{error}</p>}
+
+      {/* ROLE ACTION */}
       {(user?.role === 'admin' || user?.role === 'teacher') && (
-        <button onClick={() => alert('Create Course UI goes here')}>
+        <button
+          className="btn btn-primary"
+          onClick={() => alert('Create Course UI goes here')}
+        >
           Create Course
         </button>
       )}
 
-      {/*
+      {/* =========================
           STUDENT VIEW
-       */}
+      ========================= */}
       {user?.role === 'student' && (
-        <div style={{ margin: '20px 0' }}>
+        <div className="card">
           <h4>Student Actions</h4>
           <Link to="/my-certificates">My Certificates</Link>
         </div>
       )}
 
-      {/* 
-          TEACHER DASHBOARD VIEW
-       */}
-      {user?.role === 'teacher' && teacherDashboard && (
-        <div style={{ marginTop: 30 }}>
+      {/* =========================
+          TEACHER DASHBOARD
+      ========================= */}
+      {user?.role === 'teacher' && (
+        <div style={{ marginTop: 25 }}>
           <h3>Teacher Dashboard</h3>
 
-          <h4>Your Courses</h4>
-          {teacherDashboard.courses.length === 0 ? (
-            <p>No courses created yet.</p>
-          ) : (
-            <ul>
-              {teacherDashboard.courses.map(course => (
-                <li key={course.courseId}>
-                  {course.title} — Students: {course.studentCount}
-                </li>
-              ))}
-            </ul>
+          {loadingTeacher ? (
+            <div className="grid">
+              <SkeletonCard />
+              <SkeletonCard />
+              <SkeletonCard />
+            </div>
+          ) : teacherDashboard && (
+            <div className="grid">
+
+              <div className="card">
+                <h4>Pending Assignments</h4>
+                <p>{teacherDashboard.pendingAssignments}</p>
+              </div>
+
+              <div className="card">
+                <h4>Total Quiz Attempts</h4>
+                <p>{teacherDashboard.quizStats.totalAttempts}</p>
+              </div>
+
+              <div className="card">
+                <h4>Average Quiz Score</h4>
+                <p>{teacherDashboard.quizStats.averageScore}</p>
+              </div>
+
+              <div className="card">
+                <h4>Your Courses</h4>
+                {teacherDashboard.courses.length === 0
+                  ? <p>No courses created yet.</p>
+                  : teacherDashboard.courses.map(course => (
+                      <p key={course.courseId}>
+                        {course.title} — Students: {course.studentCount}
+                      </p>
+                    ))
+                }
+              </div>
+
+            </div>
           )}
 
-          <p>
-            <strong>Pending Assignments to Grade:</strong>{' '}
-            {teacherDashboard.pendingAssignments}
-          </p>
-
-          <p>
-            <strong>Total Quiz Attempts:</strong>{' '}
-            {teacherDashboard.quizStats.totalAttempts}
-          </p>
-
-          <p>
-            <strong>Average Quiz Score:</strong>{' '}
-            {teacherDashboard.quizStats.averageScore}
-          </p>
+          {teacherError && <p className="form-error">{teacherError}</p>}
         </div>
       )}
 
-      {teacherError && (
-        <p style={{ color: 'red' }}>{teacherError}</p>
-      )}
-
-      {/* ================================
-          ADMIN DASHBOARD VIEW
-      ================================ */}
-      {user?.role === 'admin' && adminDashboard && (
-        <div style={{ marginTop: 30 }}>
+      {/* =========================
+          ADMIN DASHBOARD
+      ========================= */}
+      {user?.role === 'admin' && (
+        <div style={{ marginTop: 25 }}>
           <h3>Admin Dashboard</h3>
 
-          <h4>User Statistics</h4>
-          <p>Total Users: {adminDashboard.users.total}</p>
-          <p>Students: {adminDashboard.users.students}</p>
-          <p>Teachers: {adminDashboard.users.teachers}</p>
+          {loadingAdmin ? (
+            <div className="grid">
+              <SkeletonCard />
+              <SkeletonCard />
+              <SkeletonCard />
+              <SkeletonCard />
+            </div>
+          ) : adminDashboard && (
+            <div className="grid">
 
-          <h4>Course Statistics</h4>
-          <p>Total Courses: {adminDashboard.courses.total}</p>
-          <p>Published Courses: {adminDashboard.courses.published}</p>
+              <div className="card">
+                <h4>Total Users</h4>
+                <p>{adminDashboard.users.total}</p>
+              </div>
 
-          <h4>Learning Activity</h4>
-          <p>Lesson Completions: {adminDashboard.activity.lessonCompletions}</p>
-          <p>Quiz Attempts: {adminDashboard.activity.quizAttempts}</p>
+              <div className="card">
+                <h4>Students</h4>
+                <p>{adminDashboard.users.students}</p>
+              </div>
 
-          <h4>Revenue</h4>
-          <p>Total Revenue: {adminDashboard.revenue.total}</p>
+              <div className="card">
+                <h4>Teachers</h4>
+                <p>{adminDashboard.users.teachers}</p>
+              </div>
+
+              <div className="card">
+                <h4>Total Courses</h4>
+                <p>{adminDashboard.courses.total}</p>
+              </div>
+
+              <div className="card">
+                <h4>Published Courses</h4>
+                <p>{adminDashboard.courses.published}</p>
+              </div>
+
+              <div className="card">
+                <h4>Lesson Completions</h4>
+                <p>{adminDashboard.activity.lessonCompletions}</p>
+              </div>
+
+              <div className="card">
+                <h4>Quiz Attempts</h4>
+                <p>{adminDashboard.activity.quizAttempts}</p>
+              </div>
+
+              <div className="card">
+                <h4>Total Revenue</h4>
+                <p>{adminDashboard.revenue.total}</p>
+              </div>
+
+            </div>
+          )}
+
+          {adminError && <p className="form-error">{adminError}</p>}
         </div>
       )}
 
-      {adminError && (
-        <p style={{ color: 'red' }}>{adminError}</p>
+      {/* =========================
+          AVAILABLE COURSES
+      ========================= */}
+      <h4 style={{ marginTop: 30 }}>Available Courses</h4>
+
+      {loadingCourses ? (
+        <div className="grid">
+          <SkeletonCard />
+          <SkeletonCard />
+          <SkeletonCard />
+        </div>
+      ) : (
+        <div className="grid">
+          {courses.map(course => (
+            <div key={course.id} className="card">
+              <Link to={`/courses/${course.id}`}>
+                {course.title}
+              </Link>
+            </div>
+          ))}
+        </div>
       )}
 
-      {/* ================================
-          AVAILABLE COURSES (ALL USERS)
-      ================================ */}
-      <h4>Available Courses</h4>
-
-      <ul>
-        {courses.map(course => (
-          <li key={course.id}>
-            <Link to={`/courses/${course.id}`}>
-              {course.title}
-            </Link>
-          </li>
-        ))}
-      </ul>
     </div>
   );
 }

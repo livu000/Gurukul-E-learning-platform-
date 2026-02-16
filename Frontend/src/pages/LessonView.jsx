@@ -1,30 +1,41 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import api from '../services/api';
+import PageHeader from '../components/common/PageHeader';
+import SkeletonCard from '../components/common/SkeletonCard';
 
 const LessonView = () => {
+
   const { lessonId } = useParams();
 
   const [lesson, setLesson] = useState(null);
   const [progress, setProgress] = useState(null);
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  /* =========================
+     FETCH LESSON
+  ========================= */
   useEffect(() => {
-    let isMounted = true; // prevents state updates on unmounted component
+
+    let isMounted = true;
 
     const fetchLesson = async () => {
       try {
         const res = await api.get(`/lessons/${lessonId}`);
+
         if (!isMounted) return;
 
         setLesson(res.data.lesson);
         setProgress(res.data.progress);
+
       } catch (err) {
         console.error('Lesson fetch failed:', err);
         if (!isMounted) return;
 
         setError('Failed to load lesson');
+
       } finally {
         if (isMounted) setLoading(false);
       }
@@ -35,62 +46,90 @@ const LessonView = () => {
     return () => {
       isMounted = false;
     };
+
   }, [lessonId]);
 
+  /* =========================
+     COMPLETE LESSON
+  ========================= */
   const handleComplete = async () => {
     try {
       await api.post(`/lessons/${lessonId}/complete`, {
-        courseId: lesson.moduleId // TEMP
+        courseId: lesson.moduleId // backend logic unchanged
       });
 
       setProgress({ status: 'completed' });
+
     } catch (err) {
       console.error('Complete failed:', err);
       alert('Failed to mark lesson complete');
     }
   };
 
-
-  // Render states
-
-  if (loading) {
-    return <p>Loading lesson...</p>;
-  }
-
-  if (error && !lesson) {
-    return <p style={{ color: 'red' }}>{error}</p>;
-  }
-
-  if (!lesson) {
-    return <p>Lesson not found</p>;
-  }
-
   return (
     <div className="page">
-      <h2>{lesson.title}</h2>
 
-      {lesson.videoUrl && (
-        <video
-          src={lesson.videoUrl}
-          controls
-          width="100%"
-          style={{ marginBottom: '20px' }}
-        />
+      <PageHeader title={lesson?.title || "Lesson"} />
+
+      {/* =========================
+          SKELETON LOADING
+      ========================= */}
+      {loading && (
+        <div className="grid">
+          <SkeletonCard />
+          <SkeletonCard />
+        </div>
       )}
 
-      <p>{lesson.content}</p>
-
-      <hr />
-
-      {progress?.status === 'completed' ? (
-        <p style={{ color: 'green', fontWeight: 'bold' }}>
-           Lesson Completed
-        </p>
-      ) : (
-        <button onClick={handleComplete}>
-          Mark as Complete
-        </button>
+      {/* =========================
+          ERROR STATE
+      ========================= */}
+      {!loading && error && !lesson && (
+        <p className="form-error">{error}</p>
       )}
+
+      {/* =========================
+          LESSON CONTENT
+      ========================= */}
+      {!loading && lesson && (
+
+        <div className="card">
+
+          {lesson.videoUrl && (
+            <div className="video-wrapper">
+              <video
+                src={lesson.videoUrl}
+                controls
+                width="100%"
+              />
+            </div>
+          )}
+
+          <div className="card-content">
+            <p>{lesson.content}</p>
+          </div>
+
+          <div className="card-actions">
+
+            {progress?.status === 'completed' ? (
+              <span className="status-badge success">
+                Lesson Completed
+              </span>
+            ) : (
+              <button
+                className="btn btn-primary"
+                onClick={handleComplete}
+              >
+                Mark as Complete
+              </button>
+            )}
+
+          </div>
+
+        </div>
+
+      )}
+
     </div>
   );
 };

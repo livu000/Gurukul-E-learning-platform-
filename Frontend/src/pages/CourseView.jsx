@@ -1,24 +1,36 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { getModulesByCourse, getLessonsByModule } from '../services/course.service';
+
+import {
+  getModulesByCourse,
+  getLessonsByModule,
+  getCourseById
+} from '../services/course.service';
+
 import { issueCertificate } from '../services/certificate.service';
 import { createPayment, verifyPayment } from '../services/payment.service';
-import { getCourseById } from '../services/course.service';
+
+import PageHeader from '../components/common/PageHeader';
+import SkeletonCard from '../components/common/SkeletonCard';
 
 import api from '../services/api';
 
 function CourseView() {
-  const { id } = useParams(); // courseId
+  const { id } = useParams();
 
   const [modules, setModules] = useState([]);
   const [lessons, setLessons] = useState({});
   const [progress, setProgress] = useState(null);
   const [certificate, setCertificate] = useState(null);
   const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [paying, setPaying] = useState(false);
   const [isEnrolled, setIsEnrolled] = useState(false);
   const [course, setCourse] = useState(null);
+
+  // =========================
+  // LOAD COURSE INFO
+  // =========================
   useEffect(() => {
     const loadCourse = async () => {
       try {
@@ -32,38 +44,37 @@ function CourseView() {
     loadCourse();
   }, [id]);
 
-  // ==========================
+  // =========================
   // LOAD MODULES
-  // ==========================
+  // =========================
   useEffect(() => {
-    setLoading(true);
-
-    getModulesByCourse(id)
-      .then((data) => {
+    const loadModules = async () => {
+      try {
+        const data = await getModulesByCourse(id);
         setModules(data);
-        setLoading(false);
-      })
-      .catch(() => {
+      } catch {
         setError('Failed to load modules');
+      } finally {
         setLoading(false);
-      });
+      }
+    };
+
+    loadModules();
   }, [id]);
 
-  // ==========================
-  // LOAD COURSE PROGRESS
-  // (Detect enrollment safely)
-  // ==========================
+  // =========================
+  // LOAD PROGRESS
+  // =========================
   useEffect(() => {
     const fetchProgress = async () => {
       try {
         const res = await api.get(`/progress/course/${id}`);
 
         setProgress(res.data);
-        // 🔥 ONLY paid courses use enrollment detection
+
         if (course?.isPaid) {
           setIsEnrolled(true);
         }
-
       } catch (error) {
         if (error?.response?.status === 403) {
           setIsEnrolled(false);
@@ -72,14 +83,15 @@ function CourseView() {
         }
       }
     };
+
     if (course) {
       fetchProgress();
     }
   }, [id, course]);
 
-  // ==========================
+  // =========================
   // LOAD LESSONS PER MODULE
-  // ==========================
+  // =========================
   const loadLessons = async (moduleId) => {
     if (lessons[moduleId]) return;
 
@@ -91,109 +103,109 @@ function CourseView() {
     }
   };
 
-  // ==========================
-  // CERTIFICATE GENERATION
-  // ==========================
+  // =========================
+  // CERTIFICATE HANDLER
+  // =========================
   const handleGetCertificate = async () => {
     try {
       const data = await issueCertificate(id);
       setCertificate(data);
-      alert('Certificate generated successfully!');
     } catch (err) {
       alert(err.response?.data?.message || 'Error generating certificate');
     }
   };
 
-  // ==========================
+  // =========================
   // PAYMENT HANDLER
-  // ==========================
+  // =========================
   const handleBuyCourse = async () => {
     try {
       setPaying(true);
 
       const payment = await createPayment(id);
-
-      alert('Payment intent created. Verifying...');
-
       await verifyPayment(payment.id);
-
-      alert('Payment successful! Course unlocked.');
 
       window.location.reload();
     } catch (err) {
-      console.error(err);
       alert(err.response?.data?.message || 'Payment failed');
     } finally {
       setPaying(false);
     }
   };
 
+  // =========================
+  // ENTERPRISE SKELETON LOADER
+  // =========================
   if (loading) {
-    return <p>Loading course...</p>;
+    return (
+      <div className="page">
+        <PageHeader title="Course Details" />
+        <div className="grid">
+          <SkeletonCard />
+          <SkeletonCard />
+          <SkeletonCard />
+        </div>
+      </div>
+    );
   }
 
   return (
-    <div style={{ maxWidth: 800, margin: '30px auto' }}>
-      <h2>Course Curriculum</h2>
+    <div className="page">
+      <PageHeader title={course?.title || 'Course Details'} />
 
-      {error && <p style={{ color: 'red' }}>{error}</p>}
+      {error && <p className="form-error">{error}</p>}
 
-      {/* ==========================
-          SMART BUY BUTTON
-      ========================== */}
-      <div style={{ marginBottom: 20 }}>
+      {/* =========================
+          PURCHASE / STATUS CARD
+      ========================= */}
+      <div className="card">
         {!isEnrolled ? (
-          <button onClick={handleBuyCourse} disabled={paying}>
+          <button
+            className="btn btn-primary"
+            onClick={handleBuyCourse}
+            disabled={paying}
+          >
             {paying ? 'Processing Payment...' : 'Buy Course'}
           </button>
         ) : (
-          <div style={{ color: 'green', fontWeight: 'bold' }}>
-            Purchased ✅
-          </div>
+          <span className="badge badge-success">
+            Purchased
+          </span>
         )}
       </div>
 
-      {/* ==========================
-          PROGRESS BAR
-      ========================== */}
+      {/* =========================
+          PROGRESS CARD
+      ========================= */}
       {isEnrolled && progress && (
-        <div style={{ marginBottom: 25 }}>
+        <div className="card">
           <p>
-            Progress: {progress.completedLessons} / {progress.totalLessons} lessons
+            Progress: {progress.completedLessons} /{' '}
+            {progress.totalLessons} lessons
           </p>
 
-          <div
-            style={{
-              width: '100%',
-              height: 18,
-              backgroundColor: '#eee',
-              borderRadius: 10,
-              overflow: 'hidden'
-            }}
-          >
+          <div className="progress-bar">
             <div
-              style={{
-                width: `${progress.percentage}%`,
-                height: '100%',
-                backgroundColor:
-                  progress.percentage >= 50 ? '#4caf50' : '#ff9800',
-                transition: 'width 0.4s ease'
-              }}
+              className="progress-fill"
+              style={{ width: `${progress.percentage}%` }}
             />
           </div>
 
-          <p style={{ marginTop: 6, fontWeight: 'bold' }}>
+          <p className="progress-text">
             {progress.percentage}%
           </p>
 
           {progress.percentage === 100 && (
-            <div style={{ marginTop: 15 }}>
-              <button onClick={handleGetCertificate}>
+            <div>
+              <button
+                className="btn btn-primary"
+                onClick={handleGetCertificate}
+              >
                 Get Certificate
               </button>
 
               {certificate && (
-                <p style={{ marginTop: 10, color: 'green' }}>
+                <p className="form-success">
                   Certificate ID: {certificate.certificate_id}
                 </p>
               )}
@@ -202,32 +214,33 @@ function CourseView() {
         </div>
       )}
 
-      {/* ==========================
-          MODULES & LESSONS
-      ========================== */}
-      {modules.map((m) => (
-        <div
-          key={m.id}
-          style={{ border: '1px solid #ccc', padding: 10, marginBottom: 10 }}
-        >
-          <h4
-            onClick={() => loadLessons(m.id)}
-            style={{ cursor: 'pointer' }}
-          >
-            {m.title}
-          </h4>
+      {/* =========================
+          MODULES LIST
+      ========================= */}
+      <div className="grid">
+        {modules.map((m) => (
+          <div key={m.id} className="card">
+            <h4
+              style={{ cursor: 'pointer' }}
+              onClick={() => loadLessons(m.id)}
+            >
+              {m.title}
+            </h4>
 
-          {lessons[m.id] && (
-            <ul>
-              {lessons[m.id].map((l) => (
-                <li key={l.id}>
-                  <Link to={`/lessons/${l.id}`}>{l.title}</Link>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
-      ))}
+            {lessons[m.id] && (
+              <ul>
+                {lessons[m.id].map((l) => (
+                  <li key={l.id}>
+                    <Link to={`/lessons/${l.id}`}>
+                      {l.title}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

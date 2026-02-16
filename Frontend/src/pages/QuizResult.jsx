@@ -1,22 +1,76 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { getQuizResult } from '../services/quiz.service';
+import PageHeader from '../components/common/PageHeader';
+import SkeletonCard from '../components/common/SkeletonCard';
 
 function QuizResult() {
+
   const { attemptId } = useParams();
+
   const [result, setResult] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
+  /* =========================
+     LOAD RESULT
+  ========================= */
   useEffect(() => {
-    getQuizResult(attemptId).then(setResult);
-  }, [attemptId]);
 
-  if (!result) return <p>Loading result...</p>;
+    const loadResult = async () => {
+      try {
+        const data = await getQuizResult(attemptId);
+        setResult(data);
+      } catch {
+        setError('Failed to load result');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadResult();
+
+  }, [attemptId]);
 
   return (
     <div className="page">
-      <h2>Quiz Result</h2>
-      <p>Score: {result.score}</p>
-      <p>Submitted at: {new Date(result.submittedAt).toLocaleString()}</p>
+
+      <PageHeader title="Quiz Result" />
+
+      {error && <p className="form-error">{error}</p>}
+
+      {/* =========================
+          SKELETON LOADING
+      ========================= */}
+      {loading && (
+        <div className="grid">
+          <SkeletonCard />
+        </div>
+      )}
+
+      {/* =========================
+          RESULT CARD
+      ========================= */}
+      {!loading && result && (
+        <div className="card">
+
+          <div className="grid">
+
+            <div>
+              <p className="card-label">Score</p>
+              <h2>{result.score}</h2>
+            </div>
+
+            <div>
+              <p className="card-label">Submitted At</p>
+              <p>{new Date(result.submittedAt).toLocaleString()}</p>
+            </div>
+
+          </div>
+
+        </div>
+      )}
+
     </div>
   );
 }
