@@ -7,7 +7,7 @@ function Login() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
 
-  const navigate = useNavigate(); // ✅ React navigation
+  const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -19,17 +19,22 @@ function Login() {
     }
 
     try {
-      const res = await api.post('/auth/login', { email, password });
+      const res = await api.post('/auth/login', {
+        email,
+        password
+      });
 
-      const token = res.data.token;
+      // 🔐 NEW TOKEN STRUCTURE (FULL STACK MATCH)
+      const { accessToken, refreshToken, user } = res.data;
 
-      // Save token
-      localStorage.setItem('token', token);
+      // Save tokens
+      localStorage.setItem('accessToken', accessToken);
+      localStorage.setItem('refreshToken', refreshToken);
 
       // Save user info
-      localStorage.setItem('user', JSON.stringify(res.data.user));
+      localStorage.setItem('user', JSON.stringify(user));
 
-      // ✅ Proper redirect after login
+      // Redirect after login
       navigate('/dashboard');
 
     } catch (err) {

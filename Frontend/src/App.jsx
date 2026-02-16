@@ -1,4 +1,5 @@
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
+import { useEffect } from 'react';
 
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
@@ -18,45 +19,191 @@ import GradeSubmission from './pages/GradeSubmission';
 import MyCertificates from './pages/MyCertificates';
 import VerifyCertificate from './pages/VerifyCertificate';
 import MyPayments from './pages/MyPayments';
+import ProtectedRoute from './pages/ProtectedRoute';
+
 function App() {
+
+  const navigate = useNavigate();
+
+  // 🔐 STARTUP AUTH CHECK
+  useEffect(() => {
+    const accessToken = localStorage.getItem('accessToken');
+    const refreshToken = localStorage.getItem('refreshToken');
+
+    if (!accessToken && !refreshToken) {
+      navigate('/login');
+    }
+  }, [navigate]);
+
   return (
     <Routes>
-      {/* Default redirect */}
-      <Route path="/" element={<Navigate to="/login" />} />
 
-      {/* Public */}
+      {/* ================= PUBLIC ================= */}
+      <Route path="/" element={<Navigate to="/login" />} />
       <Route path="/login" element={<Login />} />
 
-      {/* Authenticated */}
-      <Route path="/dashboard" element={<Dashboard />} />
+      {/* ================= AUTHENTICATED ================= */}
+      <Route
+        path="/dashboard"
+        element={
+          <ProtectedRoute>
+            <Dashboard />
+          </ProtectedRoute>
+        }
+      />
 
-      {/* Teacher / Admin */}
-      <Route path="/create-course" element={<CreateCourse />} />
+      <Route
+        path="/courses"
+        element={
+          <ProtectedRoute>
+            <CourseList />
+          </ProtectedRoute>
+        }
+      />
 
-      {/* Course Listing */}
-      <Route path="/courses" element={<CourseList />} />
+      <Route
+        path="/courses/:id"
+        element={
+          <ProtectedRoute>
+            <CourseView />
+          </ProtectedRoute>
+        }
+      />
 
-      <Route path="/courses/:id" element={<CourseView />} />
+      <Route
+        path="/lessons/:lessonId"
+        element={
+          <ProtectedRoute>
+            <LessonView />
+          </ProtectedRoute>
+        }
+      />
 
-      <Route path="/lessons/:lessonId" element={<LessonView />} />
+      {/* ================= STUDENT ROUTES ================= */}
+      <Route
+        path="/courses/:courseId/assignments"
+        element={
+          <ProtectedRoute roles={['student']}>
+            <AssignmentsList />
+          </ProtectedRoute>
+        }
+      />
 
-      <Route path="/courses/:courseId/assignments" element={<AssignmentsList />} />
-      <Route path="/assignments/:assignmentId/submit" element={<AssignmentSubmit />} />
+      <Route
+        path="/assignments/:assignmentId/submit"
+        element={
+          <ProtectedRoute roles={['student']}>
+            <AssignmentSubmit />
+          </ProtectedRoute>
+        }
+      />
 
-      <Route path="/courses/:courseId/quizzes" element={<QuizList />} />
-      <Route path="/quiz/:quizId/attempt/:attemptId" element={<QuizAttempt />} />
-      <Route path="/quiz/result/:attemptId" element={<QuizResult />} />
-      // QUIZ (Teacher)
-      <Route path="/teacher/quizzes" element={<TeacherQuizList />} />
+      <Route
+        path="/courses/:courseId/quizzes"
+        element={
+          <ProtectedRoute roles={['student']}>
+            <QuizList />
+          </ProtectedRoute>
+        }
+      />
 
-// ASSIGNMENTS (Teacher)
-      <Route path="/teacher/courses/:courseId/assignments" element={<TeacherAssignments />} />
-      <Route path="/assignments/:assignmentId/submissions" element={<AssignmentSubmissions />} />
-      <Route path="/assignments/submissions/:submissionId/grade" element={<GradeSubmission />} />
-      <Route path="/teacher/assignments/:assignmentId/submissions" element={<AssignmentSubmissions />}/>
-      <Route path="/my-certificates" element={<MyCertificates />} />
-      <Route path="/verify/:id" element={<VerifyCertificate />} />
-      <Route path="/my-payments" element={<MyPayments />} />
+      <Route
+        path="/quiz/:quizId/attempt/:attemptId"
+        element={
+          <ProtectedRoute roles={['student']}>
+            <QuizAttempt />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/quiz/result/:attemptId"
+        element={
+          <ProtectedRoute roles={['student']}>
+            <QuizResult />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* ================= TEACHER / ADMIN ROUTES ================= */}
+      <Route
+        path="/create-course"
+        element={
+          <ProtectedRoute roles={['teacher', 'admin']}>
+            <CreateCourse />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/teacher/quizzes"
+        element={
+          <ProtectedRoute roles={['teacher']}>
+            <TeacherQuizList />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/teacher/courses/:courseId/assignments"
+        element={
+          <ProtectedRoute roles={['teacher']}>
+            <TeacherAssignments />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/assignments/:assignmentId/submissions"
+        element={
+          <ProtectedRoute roles={['teacher']}>
+            <AssignmentSubmissions />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/assignments/submissions/:submissionId/grade"
+        element={
+          <ProtectedRoute roles={['teacher']}>
+            <GradeSubmission />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/teacher/assignments/:assignmentId/submissions"
+        element={
+          <ProtectedRoute roles={['teacher']}>
+            <AssignmentSubmissions />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* ================= CERTIFICATES ================= */}
+      <Route
+        path="/my-certificates"
+        element={
+          <ProtectedRoute>
+            <MyCertificates />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/verify/:id"
+        element={<VerifyCertificate />}
+      />
+
+      {/* ================= PAYMENTS ================= */}
+      <Route
+        path="/my-payments"
+        element={
+          <ProtectedRoute>
+            <MyPayments />
+          </ProtectedRoute>
+        }
+      />
 
     </Routes>
   );
