@@ -7,6 +7,8 @@ const dashboardRoutes = require('./routes/dashboard.routes');
 const adminDashboardRoutes = require('./routes/adminDashboard.routes');
 const enrollmentRoutes = require('./routes/enrollment.routes');
 const paymentRoutes = require('./routes/payment.routes');
+const { apiLimiter } = require('./middleware/rateLimit.middleware');
+
 const app = express();
 app.use(cors());
 app.use(express.json());
@@ -14,6 +16,8 @@ app.use(express.json());
 app.get('/', (req, res) => {
   res.send('Backend is running');
 });
+app .use('/api', apiLimiter); // Apply global rate limiter to all routes after this line
+app.use('/api/users', require('./routes/user.routes'));
 app.use('/api/auth', authRoutes);
 app.use('/api/courses', courseRoutes);
 app.use('/api/modules', require('./routes/module.routes'));

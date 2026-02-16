@@ -38,7 +38,7 @@ const Payment = require('./payment.model');
 const Transaction = require('./transaction.model');
 const Invoice = require('./invoice.model');
 const AuditLog = require('./auditLog.model');
-
+const RefreshToken = require('./refreshToken.model');
 
 // ======================================================
 // ASSOCIATIONS
@@ -243,5 +243,6 @@ module.exports = {
   Payment,
   Transaction,
   Invoice,
-  AuditLog
+  AuditLog,
+  RefreshToken
 };
