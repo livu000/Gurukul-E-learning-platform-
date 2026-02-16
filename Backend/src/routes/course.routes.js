@@ -7,55 +7,39 @@ const { authorizeRoles } = require('../middleware/role.middleware');
 const { optionalAuth } = require('../middleware/auth.optional');
 const { auditAction } = require('../middleware/audit.middleware');
 
+const { Course } = require('../models');
 
-// ======================================
-// GET courses
-// Anyone can access (no audit needed)
-// ======================================
+
+// GET courses (no audit)
 router.get('/', optionalAuth, courseController.getAllCourses);
 
 
-// ======================================
-// CREATE course (AUDITED)
-// ======================================
+// CREATE course (no OLD data needed)
 router.post(
   '/',
   authenticate,
   authorizeRoles('admin', 'teacher'),
-
-  // 🔴 ADD HERE
   auditAction('COURSE_CREATE', 'COURSE'),
-
   courseController.createCourse
 );
 
 
-// ======================================
-// Teacher submits course for review
-// ======================================
+// SUBMIT FOR REVIEW (OLD vs NEW)
 router.patch(
   '/:id/submit',
   authenticate,
   authorizeRoles('teacher'),
-
-  // 🔴 ADD HERE
-  auditAction('COURSE_SUBMIT_REVIEW', 'COURSE'),
-
+  auditAction('COURSE_SUBMIT_REVIEW', 'COURSE', Course),
   courseController.submitForReview
 );
 
 
-// ======================================
-// Admin approves/rejects course
-// ======================================
+// STATUS CHANGE (OLD vs NEW)
 router.patch(
   '/:id/status',
   authenticate,
   authorizeRoles('admin'),
-
-  // 🔴 ADD HERE
-  auditAction('COURSE_STATUS_CHANGE', 'COURSE'),
-
+  auditAction('COURSE_STATUS_CHANGE', 'COURSE', Course),
   courseController.updateCourseStatus
 );
 
