@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
 
 function Login() {
+
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -19,22 +20,14 @@ function Login() {
     }
 
     try {
-      const res = await api.post('/auth/login', {
-        email,
-        password
-      });
+      const res = await api.post('/auth/login', { email, password });
 
-      // 🔐 NEW TOKEN STRUCTURE (FULL STACK MATCH)
       const { accessToken, refreshToken, user } = res.data;
 
-      // Save tokens
       localStorage.setItem('accessToken', accessToken);
       localStorage.setItem('refreshToken', refreshToken);
-
-      // Save user info
       localStorage.setItem('user', JSON.stringify(user));
 
-      // Redirect after login
       navigate('/dashboard');
 
     } catch (err) {
@@ -43,30 +36,36 @@ function Login() {
   };
 
   return (
-    <div style={{ maxWidth: 400, margin: '50px auto' }}>
-      <h2>Login</h2>
+    <div className="login-wrapper">
 
-      {error && <p style={{ color: 'red' }}>{error}</p>}
+      <div className="login-card">
 
-      <form onSubmit={handleSubmit}>
-        <input
-          type="email"
-          placeholder="Email"
-          value={email}
-          onChange={e => setEmail(e.target.value)}
-        />
-        <br /><br />
+        <h2>Login</h2>
 
-        <input
-          type="password"
-          placeholder="Password"
-          value={password}
-          onChange={e => setPassword(e.target.value)}
-        />
-        <br /><br />
+        {error && <p className="login-error">{error}</p>}
 
-        <button type="submit">Login</button>
-      </form>
+        <form onSubmit={handleSubmit}>
+
+          <input
+            type="email"
+            placeholder="Email"
+            value={email}
+            onChange={(e)=>setEmail(e.target.value)}
+          />
+
+          <input
+            type="password"
+            placeholder="Password"
+            value={password}
+            onChange={(e)=>setPassword(e.target.value)}
+          />
+
+          <button type="submit">Login</button>
+
+        </form>
+
+      </div>
+
     </div>
   );
 }

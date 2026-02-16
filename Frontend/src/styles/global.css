@@ -1,11 +1,249 @@
-* {
+/* =========================
+   GURUKUL BLACK WHITE THEME
+========================= */
+
+body {
   margin: 0;
-  padding: 0;
+  font-family: Arial, Helvetica, sans-serif;
+  background: #ffffff;
+  color: #000000;
+}
+
+/* ===========================
+   FULL WIDTH BACKGROUND
+=========================== */
+
+.landing-wrapper {
+  width: 100%;
+  min-height: 100vh;
+  background: #ffffff;
+}
+
+/* ===========================
+   CONTENT WIDTH CONTROL
+=========================== */
+
+.landing-container {
+  width: 100%;
+  max-width: 1400px;        /* 🔥 increased desktop width */
+  margin: 0 auto;
+  padding: 50px 40px;
   box-sizing: border-box;
 }
 
-body {
-  font-family: Arial, Helvetica, sans-serif;
-  background-color: #f5f5f5;
-  color: #222;
+/* ===========================
+   HEADER
+=========================== */
+
+.landing-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #000;
+  padding-bottom: 20px;
+}
+
+/* ===========================
+   HERO
+=========================== */
+
+.landing-hero {
+  text-align: center;
+  padding: 100px 20px 80px;
+}
+
+/* ===========================
+   FEATURES GRID
+=========================== */
+
+.landing-features {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 40px;
+  justify-content: center;
+}
+
+/* ===========================
+   FEATURE CARD
+=========================== */
+
+.feature-card {
+  flex: 1 1 360px;     /* 🔥 auto responsive */
+  max-width: 420px;
+  border: 1px solid #000;
+  padding: 30px;
+  box-sizing: border-box;
+}
+
+/* ===========================
+   FOOTER
+=========================== */
+
+.landing-footer {
+  margin-top: 100px;
+  border-top: 1px solid #000;
+  padding-top: 20px;
+  text-align: center;
+}
+
+/* ===========================
+   TABLET
+=========================== */
+
+@media (max-width: 1024px) {
+
+  .landing-container {
+    padding: 40px 25px;
+  }
+
+}
+
+/* ===========================
+   MOBILE
+=========================== */
+
+@media (max-width: 768px) {
+
+  .landing-hero {
+    padding: 60px 10px;
+  }
+
+  .landing-header h1 {
+    font-size: 26px;
+  }
+
+  .feature-card {
+    max-width: 100%;
+  }
+
+}
+
+
+/* Buttons */
+
+.btn-primary {
+  background: #000;
+  color: #fff;
+  border: none;
+  padding: 10px 18px;
+  cursor: pointer;
+}
+
+.btn-outline {
+  border: 1px solid #000;
+  padding: 8px 14px;
+  text-decoration: none;
+  color: #000;
+}
+
+/* ======================
+   APP LAYOUT
+====================== */
+
+.app-layout {
+  width: 100%;
+  min-height: 100vh;
+}
+
+/* NAVBAR */
+
+.navbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #000;
+  padding: 15px 30px;
+}
+
+/* BODY */
+
+.layout-body {
+  display: flex;
+  min-height: calc(100vh - 60px);
+}
+
+/* SIDEBAR */
+
+.sidebar {
+  width: 220px;
+  border-right: 1px solid #000;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* CONTENT */
+
+.content-area {
+  flex: 1;
+  padding: 30px;
+  max-width: 1200px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* ================= LOGIN LAYOUT ================= */
+
+.login-wrapper {
+  width: 100%;
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: #ffffff;
+}
+
+.login-card {
+  width: 100%;
+  max-width: 420px;
+  border: 1px solid #000;
+  padding: 40px;
+  box-sizing: border-box;
+  text-align: center;
+}
+
+.login-card h2 {
+  margin-bottom: 25px;
+}
+
+/* INPUTS */
+
+.login-card input {
+  width: 100%;
+  padding: 10px;
+  margin-bottom: 15px;
+  border: 1px solid #000;
+  background: #fff;
+}
+
+/* BUTTON */
+
+.login-card button {
+  width: 100%;
+  padding: 10px;
+  background: #000;
+  color: #fff;
+  border: none;
+  cursor: pointer;
+}
+
+.login-card button:hover {
+  background: #333;
+}
+
+/* ERROR */
+
+.login-error {
+  color: red;
+  margin-bottom: 15px;
+}
+
+/* MOBILE */
+
+@media (max-width: 768px) {
+  .login-card {
+    margin: 20px;
+    padding: 25px;
+  }
 }

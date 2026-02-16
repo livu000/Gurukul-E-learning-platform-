@@ -1,4 +1,4 @@
-import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
+import { Routes, Route, useNavigate } from 'react-router-dom';
 import { useEffect } from 'react';
 
 import Login from './pages/Login';
@@ -20,6 +20,8 @@ import MyCertificates from './pages/MyCertificates';
 import VerifyCertificate from './pages/VerifyCertificate';
 import MyPayments from './pages/MyPayments';
 import ProtectedRoute from './pages/ProtectedRoute';
+import Landing from "./pages/Landing";
+import MainLayout from "./components/common/MainLayout";
 
 function App() {
 
@@ -30,8 +32,8 @@ function App() {
     const accessToken = localStorage.getItem('accessToken');
     const refreshToken = localStorage.getItem('refreshToken');
 
-    if (!accessToken && !refreshToken) {
-      navigate('/login');
+    if (accessToken || refreshToken) {
+      navigate('/dashboard');
     }
   }, [navigate]);
 
@@ -39,15 +41,18 @@ function App() {
     <Routes>
 
       {/* ================= PUBLIC ================= */}
-      <Route path="/" element={<Navigate to="/login" />} />
+      <Route path="/landing" element={<Landing />} />
       <Route path="/login" element={<Login />} />
 
       {/* ================= AUTHENTICATED ================= */}
+
       <Route
         path="/dashboard"
         element={
           <ProtectedRoute>
-            <Dashboard />
+            <MainLayout>
+              <Dashboard />
+            </MainLayout>
           </ProtectedRoute>
         }
       />
@@ -56,7 +61,9 @@ function App() {
         path="/courses"
         element={
           <ProtectedRoute>
-            <CourseList />
+            <MainLayout>
+              <CourseList />
+            </MainLayout>
           </ProtectedRoute>
         }
       />
@@ -65,7 +72,9 @@ function App() {
         path="/courses/:id"
         element={
           <ProtectedRoute>
-            <CourseView />
+            <MainLayout>
+              <CourseView />
+            </MainLayout>
           </ProtectedRoute>
         }
       />
@@ -74,17 +83,22 @@ function App() {
         path="/lessons/:lessonId"
         element={
           <ProtectedRoute>
-            <LessonView />
+            <MainLayout>
+              <LessonView />
+            </MainLayout>
           </ProtectedRoute>
         }
       />
 
       {/* ================= STUDENT ROUTES ================= */}
+
       <Route
         path="/courses/:courseId/assignments"
         element={
           <ProtectedRoute roles={['student']}>
-            <AssignmentsList />
+            <MainLayout>
+              <AssignmentsList />
+            </MainLayout>
           </ProtectedRoute>
         }
       />
@@ -93,7 +107,9 @@ function App() {
         path="/assignments/:assignmentId/submit"
         element={
           <ProtectedRoute roles={['student']}>
-            <AssignmentSubmit />
+            <MainLayout>
+              <AssignmentSubmit />
+            </MainLayout>
           </ProtectedRoute>
         }
       />
@@ -102,7 +118,9 @@ function App() {
         path="/courses/:courseId/quizzes"
         element={
           <ProtectedRoute roles={['student']}>
-            <QuizList />
+            <MainLayout>
+              <QuizList />
+            </MainLayout>
           </ProtectedRoute>
         }
       />
@@ -111,7 +129,9 @@ function App() {
         path="/quiz/:quizId/attempt/:attemptId"
         element={
           <ProtectedRoute roles={['student']}>
-            <QuizAttempt />
+            <MainLayout>
+              <QuizAttempt />
+            </MainLayout>
           </ProtectedRoute>
         }
       />
@@ -120,17 +140,22 @@ function App() {
         path="/quiz/result/:attemptId"
         element={
           <ProtectedRoute roles={['student']}>
-            <QuizResult />
+            <MainLayout>
+              <QuizResult />
+            </MainLayout>
           </ProtectedRoute>
         }
       />
 
       {/* ================= TEACHER / ADMIN ROUTES ================= */}
+
       <Route
         path="/create-course"
         element={
           <ProtectedRoute roles={['teacher', 'admin']}>
-            <CreateCourse />
+            <MainLayout>
+              <CreateCourse />
+            </MainLayout>
           </ProtectedRoute>
         }
       />
@@ -139,7 +164,9 @@ function App() {
         path="/teacher/quizzes"
         element={
           <ProtectedRoute roles={['teacher']}>
-            <TeacherQuizList />
+            <MainLayout>
+              <TeacherQuizList />
+            </MainLayout>
           </ProtectedRoute>
         }
       />
@@ -148,7 +175,9 @@ function App() {
         path="/teacher/courses/:courseId/assignments"
         element={
           <ProtectedRoute roles={['teacher']}>
-            <TeacherAssignments />
+            <MainLayout>
+              <TeacherAssignments />
+            </MainLayout>
           </ProtectedRoute>
         }
       />
@@ -157,7 +186,9 @@ function App() {
         path="/assignments/:assignmentId/submissions"
         element={
           <ProtectedRoute roles={['teacher']}>
-            <AssignmentSubmissions />
+            <MainLayout>
+              <AssignmentSubmissions />
+            </MainLayout>
           </ProtectedRoute>
         }
       />
@@ -166,7 +197,9 @@ function App() {
         path="/assignments/submissions/:submissionId/grade"
         element={
           <ProtectedRoute roles={['teacher']}>
-            <GradeSubmission />
+            <MainLayout>
+              <GradeSubmission />
+            </MainLayout>
           </ProtectedRoute>
         }
       />
@@ -175,17 +208,22 @@ function App() {
         path="/teacher/assignments/:assignmentId/submissions"
         element={
           <ProtectedRoute roles={['teacher']}>
-            <AssignmentSubmissions />
+            <MainLayout>
+              <AssignmentSubmissions />
+            </MainLayout>
           </ProtectedRoute>
         }
       />
 
       {/* ================= CERTIFICATES ================= */}
+
       <Route
         path="/my-certificates"
         element={
           <ProtectedRoute>
-            <MyCertificates />
+            <MainLayout>
+              <MyCertificates />
+            </MainLayout>
           </ProtectedRoute>
         }
       />
@@ -196,11 +234,14 @@ function App() {
       />
 
       {/* ================= PAYMENTS ================= */}
+
       <Route
         path="/my-payments"
         element={
           <ProtectedRoute>
-            <MyPayments />
+            <MainLayout>
+              <MyPayments />
+            </MainLayout>
           </ProtectedRoute>
         }
       />
