@@ -28,7 +28,7 @@ export default function MyPayments() {
   }
 
   return (
-    <div style={{ maxWidth: 700, margin: "30px auto" }}>
+    <div className="page">
       <h2>My Payments</h2>
 
       {payments.length === 0 && <p>No payments found</p>}

@@ -14,7 +14,7 @@ function AssignmentsList() {
   }, [courseId]);
 
   return (
-    <div style={{ maxWidth: 800, margin: '30px auto' }}>
+      <div className="page">
       <h2>Assignments</h2>
 
       {error && <p style={{ color: 'red' }}>{error}</p>}

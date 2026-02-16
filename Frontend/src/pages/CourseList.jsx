@@ -54,7 +54,7 @@ function CourseList() {
   if (loading) return <p>Loading courses...</p>;
 
   return (
-    <div style={{ maxWidth: 700, margin: '40px auto' }}>
+    <div className="page">
       <h2>Courses</h2>
 
       {error && <p style={{ color: 'red' }}>{error}</p>}

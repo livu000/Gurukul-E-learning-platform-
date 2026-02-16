@@ -29,7 +29,7 @@ function AssignmentSubmit() {
   };
 
   return (
-    <div style={{ maxWidth: 600, margin: '30px auto' }}>
+    <div className="page">
       <h2>Submit Assignment</h2>
 
       {error && <p style={{ color: 'red' }}>{error}</p>}

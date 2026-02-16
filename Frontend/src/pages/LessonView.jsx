@@ -66,7 +66,7 @@ const LessonView = () => {
   }
 
   return (
-    <div style={{ padding: '20px', maxWidth: '900px', margin: '0 auto' }}>
+    <div className="page">
       <h2>{lesson.title}</h2>
 
       {lesson.videoUrl && (

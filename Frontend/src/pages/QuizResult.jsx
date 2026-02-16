@@ -13,7 +13,7 @@ function QuizResult() {
   if (!result) return <p>Loading result...</p>;
 
   return (
-    <div style={{ maxWidth: 600, margin: '30px auto' }}>
+    <div className="page">
       <h2>Quiz Result</h2>
       <p>Score: {result.score}</p>
       <p>Submitted at: {new Date(result.submittedAt).toLocaleString()}</p>

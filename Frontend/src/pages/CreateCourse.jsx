@@ -22,7 +22,7 @@ function CreateCourse() {
   };
 
   return (
-    <div>
+    <div className="page">
       <h2>Create Course</h2>
 
       {message && <p>{message}</p>}

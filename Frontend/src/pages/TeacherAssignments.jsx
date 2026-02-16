@@ -73,7 +73,7 @@ function TeacherAssignments() {
   };
 
   return (
-    <div style={{ maxWidth: 800, margin: '30px auto' }}>
+    <div className="page">
       <h2>Assignments</h2>
 
       

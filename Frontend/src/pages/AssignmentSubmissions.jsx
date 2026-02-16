@@ -46,7 +46,7 @@ function AssignmentSubmissions() {
   if (error) return <p style={{ color: 'red' }}>{error}</p>;
 
   return (
-    <div style={{ maxWidth: 900, margin: '30px auto' }}>
+    <div className="page">
       <h2>Assignment Submissions</h2>
 
       {submissions.length === 0 && (

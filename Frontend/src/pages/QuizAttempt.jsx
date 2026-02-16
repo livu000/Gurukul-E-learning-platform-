@@ -31,7 +31,7 @@ function QuizAttempt() {
   };
 
   return (
-    <div style={{ maxWidth: 800, margin: '30px auto' }}>
+    <div className="page">
       <h2>Quiz</h2>
 
       {questions.map(q => (
