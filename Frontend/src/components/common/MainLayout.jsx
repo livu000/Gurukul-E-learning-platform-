@@ -1,18 +1,24 @@
+import { useState } from "react";
 import Navbar from "./Navbar";
 import Sidebar from "./Sidebar";
 
 function MainLayout({ children }) {
 
-  return (
-    <div className="app-layout">
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
-      <Navbar />
+  return (
+    <div className="layout-wrapper">
+
+      {/* Navbar */}
+      <Navbar onToggleSidebar={() => setSidebarOpen(!sidebarOpen)} />
 
       <div className="layout-body">
 
-        <Sidebar />
+        {/* Sidebar */}
+        <Sidebar sidebarOpen={sidebarOpen} />
 
-        <div className="content-area">
+        {/* Content */}
+        <div className="layout-content">
           {children}
         </div>
 
