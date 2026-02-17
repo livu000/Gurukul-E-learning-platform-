@@ -36,7 +36,12 @@ function Navbar({ onToggleSidebar }) {
 
       {/* RIGHT SECTION */}
       <div style={{ display: "flex", alignItems: "center", gap: 15 }}>
-        {user && <span>{user.role}</span>}
+        {user && (
+          <span style={{ marginRight: 15 }}>
+            {user.name || user.email || user.role}
+          </span>
+        )}
+
         <button onClick={handleLogout}>Logout</button>
       </div>
 
