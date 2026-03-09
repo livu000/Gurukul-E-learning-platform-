@@ -1,8 +1,10 @@
-import { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { getQuizzesByCourse, startQuiz } from '../services/quiz.service';
-import PageHeader from '../components/common/PageHeader';
-import SkeletonCard from '../components/common/SkeletonCard';
+import { useEffect, useState } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+
+import { getQuizzesByCourse, startQuiz } from "../services/quiz.service";
+
+import PageHeader from "../components/common/PageHeader";
+import SkeletonCard from "../components/common/SkeletonCard";
 
 function QuizList() {
 
@@ -10,8 +12,9 @@ function QuizList() {
   const navigate = useNavigate();
 
   const [quizzes, setQuizzes] = useState([]);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
+  const [startingQuizId, setStartingQuizId] = useState(null);
 
   /* =========================
      LOAD QUIZZES
@@ -19,14 +22,22 @@ function QuizList() {
   useEffect(() => {
 
     const loadQuizzes = async () => {
+
       try {
+
         const data = await getQuizzesByCourse(courseId);
-        setQuizzes(data);
+        setQuizzes(data || []);
+
       } catch {
-        setError('Failed to load quizzes');
+
+        setError("Failed to load quizzes");
+
       } finally {
+
         setLoading(false);
+
       }
+
     };
 
     loadQuizzes();
@@ -37,15 +48,45 @@ function QuizList() {
      START QUIZ
   ========================= */
   const handleStart = async (quizId) => {
+
     try {
+
+      setStartingQuizId(quizId);
+
       const attempt = await startQuiz(quizId);
-      navigate(`/quiz/${quizId}/attempt/${attempt.id}`);
+
+      // Handle multiple response formats safely
+      const attemptId =
+        attempt?.id ||
+        attempt?.attemptId ||
+        attempt?.data?.id ||
+        attempt?.data?.attemptId;
+
+      if (!attemptId) {
+        throw new Error("Invalid attempt response");
+      }
+
+      navigate(`/quiz/${quizId}/attempt/${attemptId}`);
+
     } catch (err) {
-      alert(err.response?.data?.message || 'Cannot start quiz');
+
+      console.error(err);
+
+      alert(
+        err.response?.data?.message ||
+        "Cannot start quiz"
+      );
+
+    } finally {
+
+      setStartingQuizId(null);
+
     }
+
   };
 
   return (
+
     <div className="page">
 
       <PageHeader title="Quizzes" />
@@ -53,7 +94,7 @@ function QuizList() {
       {error && <p className="form-error">{error}</p>}
 
       {/* =========================
-          SKELETON LOADING
+          LOADING STATE
       ========================= */}
       {loading && (
         <div className="grid">
@@ -84,15 +125,23 @@ function QuizList() {
             <h4>{q.title}</h4>
 
             <p>Total Marks: {q.totalMarks}</p>
-            <p>Time Limit: {q.timeLimit || 'No limit'}</p>
+
+            <p>
+              Time Limit: {q.timeLimit || "No limit"}
+            </p>
 
             <div className="card-actions">
+
               <button
                 className="btn btn-primary"
+                disabled={startingQuizId === q.id}
                 onClick={() => handleStart(q.id)}
               >
-                Start Quiz
+                {startingQuizId === q.id
+                  ? "Starting..."
+                  : "Start Quiz"}
               </button>
+
             </div>
 
           </div>
@@ -102,6 +151,7 @@ function QuizList() {
       </div>
 
     </div>
+
   );
 }
 

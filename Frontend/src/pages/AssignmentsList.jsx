@@ -1,74 +1,110 @@
-import { useEffect, useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
-import { getAssignmentsByCourse } from '../services/assignment.service';
+import { useEffect, useState } from "react";
+import { useParams, Link } from "react-router-dom";
 
-import PageHeader from '../components/common/PageHeader';
-import SkeletonCard from '../components/common/SkeletonCard';
+import { getAssignmentsByCourse } from "../services/assignment.service";
+
+import PageHeader from "../components/common/PageHeader";
+import SkeletonCard from "../components/common/SkeletonCard";
 
 function AssignmentsList() {
+
   const { courseId } = useParams();
 
   const [assignments, setAssignments] = useState([]);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
 
+  /* =========================
+     LOAD ASSIGNMENTS
+  ========================= */
   useEffect(() => {
+
     const loadAssignments = async () => {
+
       try {
+
         const data = await getAssignmentsByCourse(courseId);
-        setAssignments(data);
-        setError('');
-      } catch {
-        setError('Failed to load assignments');
+
+        setAssignments(data || []);
+        setError("");
+
+      } catch (err) {
+
+        console.error("Failed to load assignments:", err);
+        setError("Failed to load assignments");
+
       } finally {
+
         setLoading(false);
+
       }
+
     };
 
     loadAssignments();
+
   }, [courseId]);
 
-  // =========================
-  // ENTERPRISE SKELETON LOADING
-  // =========================
+  /* =========================
+     LOADING STATE
+  ========================= */
   if (loading) {
+
     return (
+
       <div className="page">
+
         <PageHeader title="Assignments" />
+
         <div className="grid">
           <SkeletonCard />
           <SkeletonCard />
           <SkeletonCard />
         </div>
+
       </div>
+
     );
+
   }
 
   return (
+
     <div className="page">
+
       <PageHeader title="Assignments" />
 
-      {error && <p style={{ color: 'red' }}>{error}</p>}
+      {error && <p className="form-error">{error}</p>}
 
-      {assignments.length === 0 && (
-        <p>No assignments available.</p>
+      {/* =========================
+          EMPTY STATE
+      ========================= */}
+      {!loading && assignments.length === 0 && (
+
+        <div className="card-muted">
+          No assignments available.
+        </div>
+
       )}
 
       {/* =========================
-          ENTERPRISE GRID + CARD SYSTEM
+          ASSIGNMENT CARDS
       ========================= */}
       <div className="grid">
+
         {assignments.map((a) => (
+
           <div key={a.id} className="card">
+
             <h4>{a.title}</h4>
 
             <p>Max Marks: {a.maxMarks}</p>
 
             <p>
-              Due:{' '}
+              Due:{" "}
               {a.dueDate
                 ? new Date(a.dueDate).toLocaleString()
-                : 'No deadline'}
+                : "No deadline"}
             </p>
 
             <Link
@@ -77,11 +113,17 @@ function AssignmentsList() {
             >
               Submit Assignment
             </Link>
+
           </div>
+
         ))}
+
       </div>
+
     </div>
+
   );
+
 }
 
 export default AssignmentsList;

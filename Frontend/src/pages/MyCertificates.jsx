@@ -1,62 +1,95 @@
 import { useEffect, useState } from "react";
+
 import { getMyCertificates } from "../services/certificate.service";
-import PageHeader from '../components/common/PageHeader';
-import SkeletonCard from '../components/common/SkeletonCard';
+
+import PageHeader from "../components/common/PageHeader";
+import SkeletonCard from "../components/common/SkeletonCard";
 
 export default function MyCertificates() {
 
   const [certs, setCerts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
   /* =========================
      LOAD CERTIFICATES
   ========================= */
+
   useEffect(() => {
+
     const loadCertificates = async () => {
+
       try {
+
         const data = await getMyCertificates();
-        setCerts(data);
+
+        setCerts(data || []);
+
       } catch (err) {
+
         console.error("Failed to load certificates", err);
+        setError("Failed to load certificates");
+
       } finally {
+
         setLoading(false);
+
       }
+
     };
 
     loadCertificates();
+
   }, []);
 
   return (
+
     <div className="page">
 
       <PageHeader title="My Certificates" />
 
+      {error && <p className="form-error">{error}</p>}
+
       {/* =========================
-          SKELETON LOADING
+          LOADING STATE
       ========================= */}
+
       {loading && (
+
         <div className="grid">
           <SkeletonCard />
           <SkeletonCard />
           <SkeletonCard />
         </div>
+
       )}
 
       {/* =========================
           EMPTY STATE
       ========================= */}
+
       {!loading && certs.length === 0 && (
-        <p>No certificates available.</p>
+
+        <div className="card-muted">
+          No certificates available.
+        </div>
+
       )}
 
       {/* =========================
           CERTIFICATE GRID
       ========================= */}
+
       {!loading && certs.length > 0 && (
+
         <div className="grid">
 
           {certs.map((c) => (
-            <div key={c.certificate_id} className="card">
+
+            <div
+              key={c.certificate_id}
+              className="card"
+            >
 
               <p>
                 <strong>Course ID:</strong> {c.course_id}
@@ -67,6 +100,7 @@ export default function MyCertificates() {
               </p>
 
               <div className="card-actions">
+
                 <a
                   href={`/verify/${c.certificate_id}`}
                   target="_blank"
@@ -75,14 +109,19 @@ export default function MyCertificates() {
                 >
                   Verify
                 </a>
+
               </div>
 
             </div>
+
           ))}
 
         </div>
+
       )}
 
     </div>
+
   );
+
 }

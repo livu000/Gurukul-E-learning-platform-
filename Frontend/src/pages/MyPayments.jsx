@@ -1,35 +1,53 @@
 import { useEffect, useState } from "react";
+
 import { getMyPayments } from "../services/payment.service";
-import PageHeader from '../components/common/PageHeader';
-import SkeletonCard from '../components/common/SkeletonCard';
+
+import PageHeader from "../components/common/PageHeader";
+import SkeletonCard from "../components/common/SkeletonCard";
 
 export default function MyPayments() {
 
   const [payments, setPayments] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
   /* =========================
      FETCH PAYMENTS
   ========================= */
+
   useEffect(() => {
+
     const fetchPayments = async () => {
+
       try {
+
         const data = await getMyPayments();
-        setPayments(data);
+
+        setPayments(data || []);
+
       } catch (err) {
-        console.error("Failed to load payments", err);
+
+        console.error("Failed to load payments:", err);
+        setError("Failed to load payments");
+
       } finally {
+
         setLoading(false);
+
       }
+
     };
 
     fetchPayments();
+
   }, []);
 
   /* =========================
      STATUS BADGE HELPER
   ========================= */
+
   const getStatusClass = (status) => {
+
     if (!status) return "status-badge";
 
     const s = status.toLowerCase();
@@ -44,38 +62,53 @@ export default function MyPayments() {
       return "status-badge status-danger";
 
     return "status-badge";
+
   };
 
   return (
+
     <div className="page">
 
       <PageHeader title="My Payments" />
 
+      {error && <p className="form-error">{error}</p>}
+
       {/* =========================
-          SKELETON LOADING
+          LOADING STATE
       ========================= */}
+
       {loading && (
+
         <div className="grid">
           <SkeletonCard />
           <SkeletonCard />
           <SkeletonCard />
         </div>
+
       )}
 
       {/* =========================
           EMPTY STATE
       ========================= */}
+
       {!loading && payments.length === 0 && (
-        <p>No payments found.</p>
+
+        <div className="card-muted">
+          No payments found.
+        </div>
+
       )}
 
       {/* =========================
           PAYMENT LIST
       ========================= */}
+
       {!loading && payments.length > 0 && (
+
         <div className="grid">
 
           {payments.map((p) => (
+
             <div key={p.id} className="card">
 
               <p>
@@ -94,11 +127,15 @@ export default function MyPayments() {
               </p>
 
             </div>
+
           ))}
 
         </div>
+
       )}
 
     </div>
+
   );
+
 }

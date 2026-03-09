@@ -1,19 +1,24 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+
 import {
   getCourses,
   submitCourse,
   updateCourseStatus
-} from '../services/course.service';
+} from "../services/course.service";
 
-import PageHeader from '../components/common/PageHeader';
-import SkeletonCard from '../components/common/SkeletonCard';
+import PageHeader from "../components/common/PageHeader";
+import SkeletonCard from "../components/common/SkeletonCard";
 
 function CourseList() {
+
+  const navigate = useNavigate();
+
   const [courses, setCourses] = useState([]);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
 
-  const user = JSON.parse(localStorage.getItem('user'));
+  const user = JSON.parse(localStorage.getItem("user"));
 
   // =========================
   // LOAD COURSES
@@ -22,10 +27,10 @@ function CourseList() {
     try {
       const res = await getCourses();
       setCourses(res.data);
-      setError('');
+      setError("");
     } catch (err) {
       console.error(err);
-      setError('Failed to load courses');
+      setError("Failed to load courses");
     } finally {
       setLoading(false);
     }
@@ -36,6 +41,13 @@ function CourseList() {
   }, []);
 
   // =========================
+  // OPEN COURSE
+  // =========================
+  const openCourse = (courseId) => {
+    navigate(`/courses/${courseId}`);
+  };
+
+  // =========================
   // TEACHER SUBMIT
   // =========================
   const handleSubmitForReview = async (id) => {
@@ -43,7 +55,7 @@ function CourseList() {
       await submitCourse(id);
       loadCourses();
     } catch (err) {
-      alert(err.response?.data?.message || 'Action failed');
+      alert(err.response?.data?.message || "Action failed");
     }
   };
 
@@ -55,12 +67,12 @@ function CourseList() {
       await updateCourseStatus(id, status);
       loadCourses();
     } catch (err) {
-      alert(err.response?.data?.message || 'Action failed');
+      alert(err.response?.data?.message || "Action failed");
     }
   };
 
   // =========================
-  // ENTERPRISE SKELETON LOADER
+  // LOADING STATE
   // =========================
   if (loading) {
     return (
@@ -77,6 +89,7 @@ function CourseList() {
 
   return (
     <div className="page">
+
       <PageHeader title="Course List" />
 
       {error && <p className="form-error">{error}</p>}
@@ -84,25 +97,33 @@ function CourseList() {
       {courses.length === 0 && <p>No courses available</p>}
 
       {/* =========================
-          ENTERPRISE GRID SYSTEM
+          COURSE GRID
       ========================= */}
       <div className="grid">
+
         {courses.map((course) => (
-          <div key={course.id} className="card">
+
+          <div
+            key={course.id}
+            className="card"
+            onClick={() => openCourse(course.id)}
+            style={{ cursor: "pointer" }}
+          >
+
             <h4>{course.title}</h4>
 
             <p>{course.description}</p>
 
             {/* =========================
-                STATUS BADGE SYSTEM
+                STATUS BADGE
             ========================= */}
             <span
               className={`badge ${
-                course.status === 'published'
-                  ? 'badge-success'
-                  : course.status === 'review'
-                  ? 'badge-warning'
-                  : 'badge-neutral'
+                course.status === "published"
+                  ? "badge-success"
+                  : course.status === "review"
+                  ? "badge-warning"
+                  : "badge-neutral"
               }`}
             >
               {course.status}
@@ -114,42 +135,52 @@ function CourseList() {
             <div style={{ marginTop: 12 }}>
 
               {/* TEACHER ACTION */}
-              {user?.role === 'teacher' && course.status === 'draft' && (
+              {user?.role === "teacher" && course.status === "draft" && (
                 <button
                   className="btn btn-primary"
-                  onClick={() => handleSubmitForReview(course.id)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleSubmitForReview(course.id);
+                  }}
                 >
                   Submit for Review
                 </button>
               )}
 
               {/* ADMIN ACTION */}
-              {user?.role === 'admin' && course.status === 'review' && (
+              {user?.role === "admin" && course.status === "review" && (
                 <>
                   <button
                     className="btn btn-success"
-                    onClick={() =>
-                      handleUpdateStatus(course.id, 'published')
-                    }
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleUpdateStatus(course.id, "published");
+                    }}
                   >
                     Approve
                   </button>
 
                   <button
                     className="btn btn-danger"
-                    onClick={() =>
-                      handleUpdateStatus(course.id, 'draft')
-                    }
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleUpdateStatus(course.id, "draft");
+                    }}
                     style={{ marginLeft: 8 }}
                   >
                     Reject
                   </button>
                 </>
               )}
+
             </div>
+
           </div>
+
         ))}
+
       </div>
+
     </div>
   );
 }

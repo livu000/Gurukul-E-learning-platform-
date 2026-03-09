@@ -1,8 +1,10 @@
-import { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
-import { getQuizResult } from '../services/quiz.service';
-import PageHeader from '../components/common/PageHeader';
-import SkeletonCard from '../components/common/SkeletonCard';
+import { useEffect, useState } from "react";
+import { useParams } from "react-router-dom";
+
+import { getQuizResult } from "../services/quiz.service";
+
+import PageHeader from "../components/common/PageHeader";
+import SkeletonCard from "../components/common/SkeletonCard";
 
 function QuizResult() {
 
@@ -10,7 +12,7 @@ function QuizResult() {
 
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
 
   /* =========================
      LOAD RESULT
@@ -18,14 +20,23 @@ function QuizResult() {
   useEffect(() => {
 
     const loadResult = async () => {
+
       try {
+
         const data = await getQuizResult(attemptId);
-        setResult(data);
-      } catch {
-        setError('Failed to load result');
+        setResult(data || null);
+
+      } catch (err) {
+
+        console.error("Failed to load result:", err);
+        setError("Failed to load result");
+
       } finally {
+
         setLoading(false);
+
       }
+
     };
 
     loadResult();
@@ -33,6 +44,7 @@ function QuizResult() {
   }, [attemptId]);
 
   return (
+
     <div className="page">
 
       <PageHeader title="Quiz Result" />
@@ -40,7 +52,7 @@ function QuizResult() {
       {error && <p className="form-error">{error}</p>}
 
       {/* =========================
-          SKELETON LOADING
+          LOADING STATE
       ========================= */}
       {loading && (
         <div className="grid">
@@ -49,30 +61,61 @@ function QuizResult() {
       )}
 
       {/* =========================
+          EMPTY STATE
+      ========================= */}
+      {!loading && !result && !error && (
+        <div className="card-muted">
+          No result available.
+        </div>
+      )}
+
+      {/* =========================
           RESULT CARD
       ========================= */}
       {!loading && result && (
+
         <div className="card">
 
           <div className="grid">
 
             <div>
               <p className="card-label">Score</p>
-              <h2>{result.score}</h2>
+              <h2>{result.score ?? "-"}</h2>
             </div>
 
-            <div>
-              <p className="card-label">Submitted At</p>
-              <p>{new Date(result.submittedAt).toLocaleString()}</p>
-            </div>
+            {result.totalQuestions !== undefined && (
+              <div>
+                <p className="card-label">Total Questions</p>
+                <p>{result.totalQuestions}</p>
+              </div>
+            )}
+
+            {result.correctAnswers !== undefined && (
+              <div>
+                <p className="card-label">Correct Answers</p>
+                <p>{result.correctAnswers}</p>
+              </div>
+            )}
+
+            {result.submittedAt && (
+              <div>
+                <p className="card-label">Submitted At</p>
+                <p>
+                  {new Date(result.submittedAt).toLocaleString()}
+                </p>
+              </div>
+            )}
 
           </div>
 
         </div>
+
       )}
 
     </div>
+
   );
+
 }
 
 export default QuizResult;

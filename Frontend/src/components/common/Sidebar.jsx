@@ -3,13 +3,18 @@ import { roleMenus } from "./sidebar.config";
 
 function Sidebar({ sidebarOpen }) {
 
-  const user = JSON.parse(localStorage.getItem("user"));
-  const menus = roleMenus[user?.role] || [];
+  const storedUser = localStorage.getItem("user");
+  const user = storedUser ? JSON.parse(storedUser) : null;
+
+  const role = user?.role || "student";
+
+  const menus = roleMenus[role] || [];
 
   return (
     <div className={`sidebar ${sidebarOpen ? "open" : ""}`}>
 
       {menus.map((item) => (
+
         <NavLink
           key={item.path}
           to={item.path}
@@ -19,6 +24,7 @@ function Sidebar({ sidebarOpen }) {
         >
           {item.label}
         </NavLink>
+
       ))}
 
     </div>

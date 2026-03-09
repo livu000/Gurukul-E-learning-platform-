@@ -1,11 +1,13 @@
-import { useEffect, useState, useCallback } from 'react';
-import { useParams } from 'react-router-dom';
+import { useEffect, useState, useCallback } from "react";
+import { useParams } from "react-router-dom";
+
 import {
   getSubmissionsByAssignment,
   gradeSubmission
-} from '../services/assignment.service';
-import PageHeader from '../components/common/PageHeader';
-import SkeletonCard from '../components/common/SkeletonCard';
+} from "../services/assignment.service";
+
+import PageHeader from "../components/common/PageHeader";
+import SkeletonCard from "../components/common/SkeletonCard";
 
 function AssignmentSubmissions() {
 
@@ -13,22 +15,34 @@ function AssignmentSubmissions() {
 
   const [submissions, setSubmissions] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
 
   /* =========================
      FETCH SUBMISSIONS
   ========================= */
 
   const fetchSubmissions = useCallback(async () => {
+
     try {
-      const data = await getSubmissionsByAssignment(assignmentId);
-      setSubmissions(data);
-      setError('');
-    } catch {
-      setError('Failed to load submissions');
+
+      const data = await getSubmissionsByAssignment(
+        Number(assignmentId)
+      );
+
+      setSubmissions(data || []);
+      setError("");
+
+    } catch (err) {
+
+      console.error("Failed to load submissions:", err);
+      setError("Failed to load submissions");
+
     } finally {
+
       setLoading(false);
+
     }
+
   }, [assignmentId]);
 
   useEffect(() => {
@@ -39,16 +53,41 @@ function AssignmentSubmissions() {
      GRADE HANDLER
   ========================= */
 
-  const handleGrade = async (submissionId, marks, feedback) => {
-    try {
-      await gradeSubmission(submissionId, { marks, feedback });
-      fetchSubmissions();
-    } catch {
-      alert('Failed to submit grade');
+  const handleGrade = async (
+    submissionId,
+    marks,
+    feedback
+  ) => {
+
+    if (marks === "" || marks === null) {
+      alert("Please enter marks before saving");
+      return;
     }
+
+    try {
+
+      await gradeSubmission(submissionId, {
+        marks: Number(marks),
+        feedback
+      });
+
+      fetchSubmissions();
+
+    } catch (err) {
+
+      console.error("Grade submission failed:", err);
+
+      alert(
+        err.response?.data?.message ||
+        "Failed to submit grade"
+      );
+
+    }
+
   };
 
   return (
+
     <div className="page">
 
       <PageHeader title="Assignment Submissions" />
@@ -56,8 +95,9 @@ function AssignmentSubmissions() {
       {error && <p className="form-error">{error}</p>}
 
       {/* =========================
-          SKELETON LOADING
+          LOADING STATE
       ========================= */}
+
       {loading && (
         <div className="grid">
           <SkeletonCard />
@@ -66,81 +106,143 @@ function AssignmentSubmissions() {
         </div>
       )}
 
+      {/* =========================
+          EMPTY STATE
+      ========================= */}
+
       {!loading && submissions.length === 0 && (
-        <p>No submissions yet.</p>
+        <div className="card-muted">
+          No submissions yet.
+        </div>
       )}
 
-      {!loading && (
+      {/* =========================
+          SUBMISSION LIST
+      ========================= */}
+
+      {!loading && submissions.length > 0 && (
+
         <div className="grid">
+
           {submissions.map((s) => (
+
             <SubmissionCard
               key={s.id}
               submission={s}
               onGrade={handleGrade}
             />
+
           ))}
+
         </div>
+
       )}
 
     </div>
+
   );
+
 }
 
-
 /* ==================================================
-   ENTERPRISE SUBMISSION CARD
+   SUBMISSION CARD
 ================================================== */
 
 function SubmissionCard({ submission, onGrade }) {
 
-  const [marks, setMarks] = useState(submission.grade?.marks || '');
-  const [feedback, setFeedback] = useState(submission.grade?.feedback || '');
+  const [marks, setMarks] = useState(
+    submission.grade?.marks ?? ""
+  );
+
+  const [feedback, setFeedback] = useState(
+    submission.grade?.feedback ?? ""
+  );
+
+  const [saving, setSaving] = useState(false);
+
+  const handleSave = async () => {
+
+    if (saving) return;
+
+    setSaving(true);
+
+    await onGrade(
+      submission.id,
+      marks,
+      feedback
+    );
+
+    setSaving(false);
+
+  };
 
   return (
+
     <div className="card">
 
-      <h4>Student: {submission.student?.name || 'Unknown'}</h4>
+      <h4>
+        Student: {submission.student?.name || "Unknown"}
+      </h4>
 
       <p>
-        <strong>Submitted At:</strong>{' '}
-        {new Date(submission.submittedAt).toLocaleString()}
+        <strong>Submitted At:</strong>{" "}
+        {submission.submittedAt
+          ? new Date(submission.submittedAt).toLocaleString()
+          : "Unknown"}
       </p>
 
       <p><strong>Submission:</strong></p>
 
       <div className="card-muted">
-        {submission.answerText || submission.content}
+        {submission.answerText || submission.content || "No answer text"}
       </div>
 
       <div className="form-group">
-        <label className="form-label">Marks</label>
+
+        <label className="form-label">
+          Marks
+        </label>
+
         <input
           className="form-input"
           type="number"
           value={marks}
-          onChange={(e) => setMarks(e.target.value)}
+          onChange={(e) =>
+            setMarks(e.target.value)
+          }
         />
+
       </div>
 
       <div className="form-group">
-        <label className="form-label">Feedback</label>
+
+        <label className="form-label">
+          Feedback
+        </label>
+
         <textarea
           className="form-textarea"
           rows={3}
           value={feedback}
-          onChange={(e) => setFeedback(e.target.value)}
+          onChange={(e) =>
+            setFeedback(e.target.value)
+          }
         />
+
       </div>
 
       <button
         className="btn btn-primary"
-        onClick={() => onGrade(submission.id, marks, feedback)}
+        disabled={saving}
+        onClick={handleSave}
       >
-        Save Grade
+        {saving ? "Saving..." : "Save Grade"}
       </button>
 
     </div>
+
   );
+
 }
 
 export default AssignmentSubmissions;

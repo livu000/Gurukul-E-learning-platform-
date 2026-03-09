@@ -1,8 +1,9 @@
-import { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
-import api from '../services/api';
-import PageHeader from '../components/common/PageHeader';
-import SkeletonCard from '../components/common/SkeletonCard';
+import { useEffect, useState } from "react";
+import { useParams } from "react-router-dom";
+
+import api from "../services/api";
+import PageHeader from "../components/common/PageHeader";
+import SkeletonCard from "../components/common/SkeletonCard";
 
 const LessonView = () => {
 
@@ -22,7 +23,9 @@ const LessonView = () => {
     let isMounted = true;
 
     const fetchLesson = async () => {
+
       try {
+
         const res = await api.get(`/lessons/${lessonId}`);
 
         if (!isMounted) return;
@@ -31,14 +34,19 @@ const LessonView = () => {
         setProgress(res.data.progress);
 
       } catch (err) {
-        console.error('Lesson fetch failed:', err);
+
+        console.error("Lesson fetch failed:", err);
+
         if (!isMounted) return;
 
-        setError('Failed to load lesson');
+        setError("Failed to load lesson");
 
       } finally {
+
         if (isMounted) setLoading(false);
+
       }
+
     };
 
     fetchLesson();
@@ -53,26 +61,34 @@ const LessonView = () => {
      COMPLETE LESSON
   ========================= */
   const handleComplete = async () => {
-    try {
-      await api.post(`/lessons/${lessonId}/complete`, {
-        courseId: lesson.moduleId // backend logic unchanged
-      });
 
-      setProgress({ status: 'completed' });
+    try {
+
+      await api.post(`/lessons/${lessonId}/complete`);
+
+      // update UI locally
+      setProgress((prev) => ({
+        ...prev,
+        status: "completed"
+      }));
 
     } catch (err) {
-      console.error('Complete failed:', err);
-      alert('Failed to mark lesson complete');
+
+      console.error("Complete failed:", err);
+      alert("Failed to mark lesson complete");
+
     }
+
   };
 
   return (
+
     <div className="page">
 
       <PageHeader title={lesson?.title || "Lesson"} />
 
       {/* =========================
-          SKELETON LOADING
+          LOADING STATE
       ========================= */}
       {loading && (
         <div className="grid">
@@ -96,6 +112,7 @@ const LessonView = () => {
         <div className="card">
 
           {lesson.videoUrl && (
+
             <div className="video-wrapper">
               <video
                 src={lesson.videoUrl}
@@ -103,6 +120,7 @@ const LessonView = () => {
                 width="100%"
               />
             </div>
+
           )}
 
           <div className="card-content">
@@ -111,17 +129,21 @@ const LessonView = () => {
 
           <div className="card-actions">
 
-            {progress?.status === 'completed' ? (
+            {progress?.status === "completed" ? (
+
               <span className="status-badge success">
                 Lesson Completed
               </span>
+
             ) : (
+
               <button
                 className="btn btn-primary"
                 onClick={handleComplete}
               >
                 Mark as Complete
               </button>
+
             )}
 
           </div>
@@ -131,7 +153,9 @@ const LessonView = () => {
       )}
 
     </div>
+
   );
+
 };
 
 export default LessonView;

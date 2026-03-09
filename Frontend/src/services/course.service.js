@@ -1,39 +1,64 @@
-import api from './api';
+import api from "./api";
 
-// Get courses (public / role-based)
-export const getCourses = () => api.get('/courses');
+/* =========================
+   COURSE API
+========================= */
+
+// Get courses (role-based visibility)
+export const getCourses = async () => {
+  const res = await api.get("/courses");
+  return res.data;
+};
 
 // Create course (teacher/admin)
-export const createCourse = (data) => api.post('/courses', data);
+export const createCourse = async (data) => {
+  const res = await api.post("/courses", data);
+  return res.data;
+};
 
 // Teacher submits course for review
-export const submitCourse = (courseId) =>
-  api.patch(`/courses/${courseId}/submit`);
+export const submitCourse = async (courseId) => {
+  const res = await api.patch(`/courses/${courseId}/submit`);
+  return res.data;
+};
 
-// Admin approves or rejects course
-export const updateCourseStatus = (courseId, status) =>
-  api.patch(`/courses/${courseId}/status`, { status });
+// Admin updates course status
+export const updateCourseStatus = async (courseId, status) => {
+  const res = await api.patch(`/courses/${courseId}/status`, {
+    status
+  });
+  return res.data;
+};
+
+// Get single course
+export const getCourseById = async (courseId) => {
+  const res = await api.get(`/courses/${courseId}`);
+  return res.data;
+};
+
+/* =========================
+   MODULE API
+========================= */
 
 export const getModulesByCourse = async (courseId) => {
   const res = await api.get(`/modules/course/${courseId}`);
   return res.data;
 };
 
+/* =========================
+   LESSON API
+========================= */
+
 export const getLessonsByModule = async (moduleId) => {
   const res = await api.get(`/lessons/module/${moduleId}`);
   return res.data;
 };
 
-// Get course progress (student only)
+/* =========================
+   PROGRESS API
+========================= */
+
 export const getCourseProgress = async (courseId) => {
   const res = await api.get(`/progress/course/${courseId}`);
-  return res.data;
-};
-
-// ==========================
-// GET COURSE BY ID
-// ==========================
-export const getCourseById = async (courseId) => {
-  const res = await api.get(`/courses/${courseId}`);
   return res.data;
 };

@@ -1,9 +1,9 @@
-import { Navigate } from 'react-router-dom';
+import { Navigate, Outlet } from "react-router-dom";
 
-function ProtectedRoute({ children, roles = [] }) {
+function ProtectedRoute({ roles = [] }) {
 
-  const accessToken = localStorage.getItem('accessToken');
-  const user = JSON.parse(localStorage.getItem('user'));
+  const accessToken = localStorage.getItem("accessToken");
+  const user = JSON.parse(localStorage.getItem("user"));
 
   // ===============================
   // NOT LOGGED IN
@@ -19,7 +19,10 @@ function ProtectedRoute({ children, roles = [] }) {
     return <Navigate to="/dashboard" replace />;
   }
 
-  return children;
+  // ===============================
+  // ALLOW ROUTE
+  // ===============================
+  return <Outlet />;
 }
 
 export default ProtectedRoute;

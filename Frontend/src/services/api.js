@@ -1,85 +1,103 @@
-import axios from 'axios';
+import axios from "axios";
 
-// ======================================
-// AXIOS INSTANCE
-// ======================================
+/* ======================================
+   AXIOS INSTANCE
+====================================== */
+
 const api = axios.create({
-  baseURL: 'http://localhost:4000/api'
-});
-
-// ======================================
-// REQUEST INTERCEPTOR
-// Attach Access Token Automatically
-// ======================================
-api.interceptors.request.use((config) => {
-
-  const accessToken = localStorage.getItem('accessToken');
-
-  if (accessToken) {
-    config.headers.Authorization = `Bearer ${accessToken}`;
+  baseURL: import.meta.env.VITE_API_URL || "http://localhost:4000/api",
+  headers: {
+    "Content-Type": "application/json"
   }
-
-  return config;
 });
 
-// ======================================
-// RESPONSE INTERCEPTOR
-// AUTO REFRESH TOKEN SYSTEM
-// ======================================
+/* ======================================
+   REQUEST INTERCEPTOR
+   Attach Access Token Automatically
+====================================== */
+
+api.interceptors.request.use(
+
+  (config) => {
+
+    const accessToken = localStorage.getItem("accessToken");
+
+    if (accessToken) {
+      config.headers.Authorization = `Bearer ${accessToken}`;
+    }
+
+    return config;
+  },
+
+  (error) => Promise.reject(error)
+
+);
+
+/* ======================================
+   RESPONSE INTERCEPTOR
+   AUTO REFRESH TOKEN SYSTEM
+====================================== */
+
 api.interceptors.response.use(
+
   (response) => response,
+
   async (error) => {
 
     const originalRequest = error.config;
 
-    // Only retry once
     if (
       error.response?.status === 401 &&
       !originalRequest._retry
     ) {
+
       originalRequest._retry = true;
 
       try {
-        const refreshToken = localStorage.getItem('refreshToken');
 
-        // If no refresh token → force logout
+        const refreshToken = localStorage.getItem("refreshToken");
+
+        // If refresh token missing → logout
         if (!refreshToken) {
+
           localStorage.clear();
-          window.location.href = '/login';
+          window.location.href = "/login";
+
           return Promise.reject(error);
         }
 
         // Request new access token
         const res = await axios.post(
-          'http://localhost:4000/api/auth/refresh',
+          `${import.meta.env.VITE_API_URL || "http://localhost:4000/api"}/auth/refresh`,
           { refreshToken }
         );
 
         const newAccessToken = res.data.accessToken;
 
-        // Save new token
-        localStorage.setItem('accessToken', newAccessToken);
+        // Store new access token
+        localStorage.setItem("accessToken", newAccessToken);
 
-        // Retry original request with new token
-        originalRequest.headers.Authorization =
-          `Bearer ${newAccessToken}`;
+        // Update header
+        originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
 
+        // Retry original request
         return api(originalRequest);
 
       } catch (refreshError) {
 
-        console.error('Refresh token failed');
+        console.error("Token refresh failed:", refreshError);
 
-        // Clear session and redirect
         localStorage.clear();
-        window.location.href = '/login';
+        window.location.href = "/login";
 
         return Promise.reject(refreshError);
       }
     }
 
     return Promise.reject(error);
+
   }
+
 );
 
 export default api;

@@ -1,9 +1,10 @@
 import { useParams } from "react-router-dom";
 import { useEffect, useState } from "react";
+
 import { verifyCertificate } from "../services/certificate.service";
 
-import PageHeader from '../components/common/PageHeader';
-import SkeletonCard from '../components/common/SkeletonCard';
+import PageHeader from "../components/common/PageHeader";
+import SkeletonCard from "../components/common/SkeletonCard";
 
 export default function VerifyCertificate() {
 
@@ -11,22 +12,34 @@ export default function VerifyCertificate() {
 
   const [cert, setCert] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
 
   /* =========================
      VERIFY CERTIFICATE
   ========================= */
+
   useEffect(() => {
 
     const loadCertificate = async () => {
+
       try {
+
         const data = await verifyCertificate(id);
-        setCert(data);
-      } catch {
-        setError('Certificate not found or invalid');
+
+        setCert(data || null);
+
+      } catch (err) {
+
+        console.error("Certificate verification failed:", err);
+
+        setError("Certificate not found or invalid");
+
       } finally {
+
         setLoading(false);
+
       }
+
     };
 
     loadCertificate();
@@ -34,6 +47,7 @@ export default function VerifyCertificate() {
   }, [id]);
 
   return (
+
     <div className="page">
 
       <PageHeader title="Certificate Verification" />
@@ -41,18 +55,23 @@ export default function VerifyCertificate() {
       {error && <p className="form-error">{error}</p>}
 
       {/* =========================
-          SKELETON LOADING
+          LOADING STATE
       ========================= */}
+
       {loading && (
+
         <div className="grid">
           <SkeletonCard />
         </div>
+
       )}
 
       {/* =========================
           CERTIFICATE CARD
       ========================= */}
+
       {!loading && cert && (
+
         <div className="card">
 
           <span className="badge badge-success">
@@ -78,14 +97,21 @@ export default function VerifyCertificate() {
 
             <div>
               <p className="card-label">Issued At</p>
-              <p>{new Date(cert.issued_at).toLocaleString()}</p>
+              <p>
+                {cert.issued_at
+                  ? new Date(cert.issued_at).toLocaleString()
+                  : "Unknown"}
+              </p>
             </div>
 
           </div>
 
         </div>
+
       )}
 
     </div>
+
   );
+
 }
