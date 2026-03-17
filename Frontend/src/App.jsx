@@ -28,6 +28,8 @@ import ProtectedRoute from "./pages/ProtectedRoute";
 import Landing from "./pages/Landing";
 import MainLayout from "./components/common/MainLayout";
 
+import CourseBuilder from "./pages/CourseBuilder";
+
 function App() {
 
   const navigate = useNavigate();
@@ -73,15 +75,27 @@ function App() {
           <Route path="/quiz/:quizId/attempt/:attemptId" element={<QuizAttempt />} />
           <Route path="/quiz/result/:attemptId" element={<QuizResult />} />
 
+          {/* COURSE CREATION */}
+
           <Route path="/create-course" element={<CreateCourse />} />
+
+          {/* COURSE BUILDER (NEW) */}
+
+          <Route path="/teacher/course/:courseId/builder" element={<CourseBuilder />} />
+
+          {/* TEACHER */}
 
           <Route path="/teacher/quizzes" element={<TeacherQuizList />} />
 
           <Route path="/teacher/courses/:courseId/assignments" element={<TeacherAssignments />} />
 
+          {/* ASSIGNMENT GRADING */}
+
           <Route path="/assignments/:assignmentId/submissions" element={<AssignmentSubmissions />} />
 
           <Route path="/assignments/submissions/:submissionId/grade" element={<GradeSubmission />} />
+
+          {/* STUDENT */}
 
           <Route path="/my-certificates" element={<MyCertificates />} />
 

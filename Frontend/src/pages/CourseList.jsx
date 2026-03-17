@@ -118,23 +118,34 @@ function CourseList() {
                 STATUS BADGE
             ========================= */}
             <span
-              className={`badge ${
-                course.status === "published"
+              className={`badge ${course.status === "published"
                   ? "badge-success"
                   : course.status === "review"
-                  ? "badge-warning"
-                  : "badge-neutral"
-              }`}
+                    ? "badge-warning"
+                    : "badge-neutral"
+                }`}
             >
               {course.status}
             </span>
 
-            {/* =========================
-                ROLE BASED ACTIONS
-            ========================= */}
+            {/* ROLE BASED ACTIONS */}
             <div style={{ marginTop: 12 }}>
 
-              {/* TEACHER ACTION */}
+              {/* TEACHER BUILDER */}
+              {user?.role === "teacher" && (
+                <button
+                  className="btn btn-secondary"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    navigate(`/teacher/course/${course.id}/builder`);
+                  }}
+                  style={{ marginRight: 8 }}
+                >
+                  Open Builder
+                </button>
+              )}
+
+              {/* TEACHER SUBMIT */}
               {user?.role === "teacher" && course.status === "draft" && (
                 <button
                   className="btn btn-primary"

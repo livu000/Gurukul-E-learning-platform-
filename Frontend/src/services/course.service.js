@@ -62,3 +62,27 @@ export const getCourseProgress = async (courseId) => {
   const res = await api.get(`/progress/course/${courseId}`);
   return res.data;
 };
+export const createModule = async (courseId, title) => {
+  const res = await api.post(`/modules`, {
+    courseId,
+    title
+  });
+  return res.data;
+};
+
+export const createLesson = async (moduleId, lesson) => {
+  const res = await api.post(`/lessons`, {
+    moduleId,
+    ...lesson
+  });
+  return res.data;
+};
+
+ export const deleteModule = async (moduleId) => {
+  const res = await api.delete(`/modules/${moduleId}`);
+  return res.data;
+};
+export const deleteLesson = async (lessonId) => {
+  const res = await api.delete(`/lessons/${lessonId}`);
+  return res.data;
+};
