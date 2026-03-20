@@ -7,6 +7,7 @@
   "scripts": {
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
+    "db:check": "node scripts/db-health-check.js",
     "test": "echo \"No tests yet\""
   },
   "keywords": [],

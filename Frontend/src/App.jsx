@@ -1,46 +1,42 @@
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route } from 'react-router-dom';
 
-import Login from "./pages/Login";
-import Dashboard from "./pages/Dashboard";
-import CreateCourse from "./pages/CreateCourse";
-import CourseList from "./pages/CourseList";
-import CourseView from "./pages/CourseView";
-import LessonView from "./pages/LessonView";
+import Login from './pages/Login';
+import Dashboard from './pages/Dashboard';
+import CreateCourse from './pages/CreateCourse';
+import CourseList from './pages/CourseList';
+import CourseView from './pages/CourseView';
+import LessonView from './pages/LessonView';
 
-import AssignmentsList from "./pages/AssignmentsList";
-import AssignmentSubmit from "./pages/AssignmentSubmit";
+import AssignmentsList from './pages/AssignmentsList';
+import AssignmentSubmit from './pages/AssignmentSubmit';
 
-import QuizList from "./pages/QuizList";
-import QuizAttempt from "./pages/QuizAttempt";
-import QuizResult from "./pages/QuizResult";
+import QuizList from './pages/QuizList';
+import QuizAttempt from './pages/QuizAttempt';
+import QuizResult from './pages/QuizResult';
 
-import TeacherQuizList from "./pages/TeacherQuizList";
-import TeacherAssignments from "./pages/TeacherAssignments";
-import AssignmentSubmissions from "./pages/AssignmentSubmissions";
-import AdminUsers from "./pages/AdminUsers";
+import TeacherQuizList from './pages/TeacherQuizList';
+import TeacherAssignments from './pages/TeacherAssignments';
+import AssignmentSubmissions from './pages/AssignmentSubmissions';
+import AdminUsers from './pages/AdminUsers';
+import AdminAnalytics from './pages/AdminAnalytics';
 
-import MyCertificates from "./pages/MyCertificates";
-import VerifyCertificate from "./pages/VerifyCertificate";
-import MyPayments from "./pages/MyPayments";
+import MyCertificates from './pages/MyCertificates';
+import VerifyCertificate from './pages/VerifyCertificate';
+import MyPayments from './pages/MyPayments';
 
-import ProtectedRoute from "./pages/ProtectedRoute";
-import Landing from "./pages/Landing";
-import MainLayout from "./components/common/MainLayout";
+import ProtectedRoute from './pages/ProtectedRoute';
+import Landing from './pages/Landing';
+import MainLayout from './components/common/MainLayout';
 
-import CourseBuilder from "./pages/CourseBuilder";
+import CourseBuilder from './pages/CourseBuilder';
+import Settings from './pages/Settings';
 
 function App() {
   return (
-
     <Routes>
-
-      {/* PUBLIC */}
-
       <Route path="/" element={<Landing />} />
       <Route path="/landing" element={<Landing />} />
       <Route path="/login" element={<Login />} />
-
-      {/* PROTECTED */}
 
       <Route element={<ProtectedRoute />}>
         <Route element={<MainLayout />}>
@@ -48,10 +44,11 @@ function App() {
           <Route path="/courses" element={<CourseList />} />
           <Route path="/courses/:id" element={<CourseView />} />
           <Route path="/lessons/:lessonId" element={<LessonView />} />
+          <Route path="/settings" element={<Settings />} />
         </Route>
       </Route>
 
-      <Route element={<ProtectedRoute roles={["student"]} />}>
+      <Route element={<ProtectedRoute roles={['student']} />}>
         <Route element={<MainLayout />}>
           <Route path="/courses/:courseId/assignments" element={<AssignmentsList />} />
           <Route path="/assignments/:assignmentId/submit" element={<AssignmentSubmit />} />
@@ -63,7 +60,7 @@ function App() {
         </Route>
       </Route>
 
-      <Route element={<ProtectedRoute roles={["teacher", "admin"]} />}>
+      <Route element={<ProtectedRoute roles={['teacher', 'admin']} />}>
         <Route element={<MainLayout />}>
           <Route path="/create-course" element={<CreateCourse />} />
           <Route path="/teacher/course/:courseId/builder" element={<CourseBuilder />} />
@@ -73,18 +70,15 @@ function App() {
         </Route>
       </Route>
 
-      <Route element={<ProtectedRoute roles={["admin"]} />}>
+      <Route element={<ProtectedRoute roles={['admin']} />}>
         <Route element={<MainLayout />}>
           <Route path="/admin/users" element={<AdminUsers />} />
+          <Route path="/admin/analytics" element={<AdminAnalytics />} />
         </Route>
       </Route>
 
-      {/* PUBLIC CERTIFICATE */}
-
       <Route path="/verify/:id" element={<VerifyCertificate />} />
-
     </Routes>
-
   );
 }
 

@@ -12,13 +12,66 @@ async function syncEnrollmentProgress(userId, courseId, lastLessonId = null) {
   const completedLessons = await LessonProgress.count({ where: { userId, courseId, isCompleted: true } });
   const progressPercentage = totalLessons ? Number(((completedLessons / totalLessons) * 100).toFixed(2)) : 0;
   const enrollment = await Enrollment.findOne({ where: { userId, courseId, status: { [Op.in]: ['active', 'completed'] } } });
-  if (!enrollment) return;
+  if (!enrollment) return null;
+
   await enrollment.update({
     progressPercentage,
     lastAccessedLessonId: lastLessonId || enrollment.lastAccessedLessonId,
     status: progressPercentage >= 100 ? 'completed' : enrollment.status === 'completed' ? 'active' : enrollment.status,
     completedAt: progressPercentage >= 100 ? (enrollment.completedAt || new Date()) : null
   });
+
+  return enrollment;
+}
+
+function buildProgressPayload(progress) {
+  return progress || {
+    isCompleted: false,
+    lastWatchedSecond: 0,
+    totalWatchedSeconds: 0,
+    status: 'not_started'
+  };
+}
+
+async function buildCurriculum(courseId, canManage) {
+  const course = await Course.findByPk(courseId, {
+    attributes: ['id', 'title'],
+    include: [{
+      model: Module,
+      as: 'modules',
+      include: [{ model: Lesson, as: 'lessons' }]
+    }]
+  });
+
+  if (!course) {
+    return { course: null, curriculum: [] };
+  }
+
+  const curriculum = (course.modules || [])
+    .filter((module) => canManage || module.isPublished)
+    .sort((a, b) => a.sortOrder - b.sortOrder)
+    .map((module) => ({
+      id: module.id,
+      title: module.title,
+      sortOrder: module.sortOrder,
+      lessons: (module.lessons || [])
+        .filter((lesson) => canManage || lesson.isPublished)
+        .sort((a, b) => a.sortOrder - b.sortOrder)
+        .map((lesson) => ({
+          id: lesson.id,
+          title: lesson.title,
+          sortOrder: lesson.sortOrder,
+          durationMinutes: lesson.durationMinutes,
+          lessonType: lesson.lessonType,
+          isPreview: lesson.isPreview
+        }))
+    }))
+    .filter((module) => module.lessons.length > 0 || canManage);
+
+  return {
+    course: { id: course.id, title: course.title },
+    curriculum
+  };
 }
 
 exports.createLesson = async (req, res) => {
@@ -63,13 +116,75 @@ exports.getLessonsByModule = async (req, res) => {
 
 exports.getLessonWithProgress = async (req, res) => {
   try {
-    const lesson = await Lesson.findByPk(req.params.lessonId, { include: [{ model: Module, as: 'module', attributes: ['courseId'] }] });
-    if (!lesson) return res.status(404).json({ message: 'Lesson not found' });
+    const lesson = await Lesson.findByPk(req.params.lessonId, {
+      include: [{
+        model: Module,
+        as: 'module',
+        include: [{ model: Course, as: 'course', attributes: ['id', 'title', 'teacherId'] }]
+      }]
+    });
+
+    if (!lesson?.module?.course) {
+      return res.status(404).json({ message: 'Lesson not found' });
+    }
+
+    const canManage = req.user.role === 'admin' || (req.user.role === 'teacher' && Number(lesson.module.course.teacherId) === Number(req.user.id));
     const progress = await LessonProgress.findOne({ where: { userId: req.user.id, lessonId: lesson.id } });
-    return res.json({ lesson, progress: progress || { isCompleted: false, lastWatchedSecond: 0, totalWatchedSeconds: 0, status: 'not_started' } });
+    const { course, curriculum } = await buildCurriculum(lesson.module.course.id, canManage);
+
+    return res.json({
+      lesson,
+      progress: buildProgressPayload(progress),
+      course,
+      curriculum
+    });
   } catch (err) {
     console.error(err);
     return res.status(500).json({ message: 'Failed to load lesson' });
+  }
+};
+
+exports.updateLessonProgress = async (req, res) => {
+  try {
+    const lesson = await Lesson.findByPk(req.params.lessonId, {
+      include: [{ model: Module, as: 'module', attributes: ['courseId'] }]
+    });
+
+    if (!lesson?.module) {
+      return res.status(404).json({ message: 'Lesson not found' });
+    }
+
+    const lastWatchedSecond = Math.max(0, Number(req.body.lastWatchedSecond || 0));
+    const totalWatchedSeconds = Math.max(lastWatchedSecond, Number(req.body.totalWatchedSeconds || 0));
+    const completionTarget = Number(lesson.videoDurationSeconds || 0) || Number(lesson.durationMinutes || 0) * 60;
+    const shouldComplete = Boolean(req.body.isCompleted) || (completionTarget > 0 && totalWatchedSeconds >= completionTarget);
+
+    const [progress] = await LessonProgress.findOrCreate({
+      where: { userId: req.user.id, lessonId: lesson.id },
+      defaults: {
+        courseId: lesson.module.courseId,
+        lastWatchedSecond,
+        totalWatchedSeconds,
+        isCompleted: shouldComplete,
+        completedAt: shouldComplete ? new Date() : null,
+        lastAccessedAt: new Date()
+      }
+    });
+
+    await progress.update({
+      courseId: lesson.module.courseId,
+      lastWatchedSecond: Math.max(Number(progress.lastWatchedSecond || 0), lastWatchedSecond),
+      totalWatchedSeconds: Math.max(Number(progress.totalWatchedSeconds || 0), totalWatchedSeconds),
+      isCompleted: shouldComplete || progress.isCompleted,
+      completedAt: shouldComplete ? (progress.completedAt || new Date()) : progress.completedAt,
+      lastAccessedAt: new Date()
+    });
+
+    await syncEnrollmentProgress(req.user.id, lesson.module.courseId, lesson.id);
+    return res.json({ progress });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ message: 'Failed to update lesson progress' });
   }
 };
 

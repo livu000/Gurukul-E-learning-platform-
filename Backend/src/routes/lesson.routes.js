@@ -4,11 +4,6 @@ const { authorizeRoles } = require('../middleware/role.middleware');
 const { ensureEnrolled } = require('../middleware/enrollment.middleware');
 const controller = require('../controllers/lesson.controller');
 
-/**
- * CREATE LESSON
- * Teacher / Admin only
- * (UNCHANGED)
- */
 router.post(
   '/',
   authenticate,
@@ -16,21 +11,11 @@ router.post(
   controller.createLesson
 );
 
-/**
- * GET LESSONS BY MODULE
- * Public (course preview)
- * (UNCHANGED)
- */
 router.get(
   '/module/:moduleId',
   controller.getLessonsByModule
 );
 
-/**
- * GET LESSON CONTENT + PROGRESS
- * Student must be ENROLLED
- * Teacher/Admin bypass handled inside middleware
- */
 router.get(
   '/:lessonId',
   authenticate,
@@ -38,10 +23,14 @@ router.get(
   controller.getLessonWithProgress
 );
 
-/**
- * MARK LESSON AS COMPLETED
- * Student must be ENROLLED
- */
+router.post(
+  '/:lessonId/progress',
+  authenticate,
+  authorizeRoles('student'),
+  ensureEnrolled,
+  controller.updateLessonProgress
+);
+
 router.post(
   '/:lessonId/complete',
   authenticate,

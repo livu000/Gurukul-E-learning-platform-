@@ -5,12 +5,6 @@ const { authorizeRoles } = require('../middleware/role.middleware');
 
 const controller = require('../controllers/payment.controller');
 
-
-// ==========================================
-// STUDENT PAYMENT ROUTES
-// ==========================================
-
-// Create payment intent
 router.post(
   '/create',
   authenticate,
@@ -18,7 +12,6 @@ router.post(
   controller.createPayment
 );
 
-// Verify payment (mock for now)
 router.post(
   '/verify',
   authenticate,
@@ -26,12 +19,17 @@ router.post(
   controller.verifyPayment
 );
 
-// Get my payments history
 router.get(
   '/my',
   authenticate,
-  authorizeRoles('student'),
+  authorizeRoles('student', 'admin'),
   controller.getMyPayments
+);
+
+router.get(
+  '/:paymentId/invoice',
+  authenticate,
+  controller.downloadInvoice
 );
 
 module.exports = router;
