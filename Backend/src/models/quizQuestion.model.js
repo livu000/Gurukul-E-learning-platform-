@@ -10,7 +10,7 @@ const QuizQuestion = sequelize.define('QuizQuestion', {
   explanation: { type: DataTypes.TEXT },
   marks: { type: DataTypes.INTEGER, allowNull: false, defaultValue: 1 },
   sortOrder: { type: DataTypes.INTEGER, allowNull: false, defaultValue: 1, field: 'sort_order' },
-  isRequired: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: true, field: 'is_required' }
+  isRequired: { type: DataTypes.BOOLEAN, defaultValue: true, field: 'is_required' }
 }, {
   tableName: 'quiz_questions',
   underscored: true,
@@ -18,7 +18,12 @@ const QuizQuestion = sequelize.define('QuizQuestion', {
   paranoid: true,
   createdAt: 'created_at',
   updatedAt: 'updated_at',
-  deletedAt: 'deleted_at'
+  deletedAt: 'deleted_at',
+  indexes: [
+    { name: 'idx_question_quiz', fields: [{ name: 'quiz_id' }] },
+    { name: 'idx_question_order', fields: [{ name: 'quiz_id' }, { name: 'sort_order' }] },
+    { name: 'idx_question_type', fields: [{ name: 'question_type' }] }
+  ]
 });
 
 module.exports = QuizQuestion;

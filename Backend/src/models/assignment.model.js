@@ -25,7 +25,13 @@ const Assignment = sequelize.define('Assignment', {
   paranoid: true,
   createdAt: 'created_at',
   updatedAt: 'updated_at',
-  deletedAt: 'deleted_at'
+  deletedAt: 'deleted_at',
+  indexes: [
+    { name: 'idx_assignment_course', fields: [{ name: 'course_id' }] },
+    { name: 'idx_assignment_creator', fields: [{ name: 'created_by' }] },
+    { name: 'idx_assignment_due_date', fields: [{ name: 'due_date' }] },
+    { name: 'idx_assignment_publish', fields: [{ name: 'is_published' }] }
+  ]
 });
 
 module.exports = Assignment;

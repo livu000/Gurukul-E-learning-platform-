@@ -9,11 +9,25 @@ const QuizAnswer = sequelize.define('QuizAnswer', {
   answerText: { type: DataTypes.TEXT, field: 'answer_text' },
   isCorrect: { type: DataTypes.BOOLEAN, defaultValue: false, field: 'is_correct' },
   marksAwarded: { type: DataTypes.DECIMAL(6, 2), defaultValue: 0, field: 'marks_awarded' },
-  answeredAt: { type: DataTypes.DATE, allowNull: false, defaultValue: DataTypes.NOW, field: 'answered_at' }
+  answeredAt: { type: DataTypes.DATE, defaultValue: DataTypes.NOW, field: 'answered_at' }
 }, {
   tableName: 'quiz_answers',
   underscored: true,
-  timestamps: false
+  timestamps: false,
+  indexes: [
+    { name: 'idx_answers_attempt', fields: [{ name: 'attempt_id' }] },
+    { name: 'idx_answers_question', fields: [{ name: 'question_id' }] },
+    { name: 'idx_answers_option', fields: [{ name: 'selected_option_id' }] },
+    {
+      name: 'idx_answers_attempt_question',
+      fields: [{ name: 'attempt_id' }, { name: 'question_id' }]
+    },
+    {
+      name: 'uq_attempt_question',
+      unique: true,
+      fields: [{ name: 'attempt_id' }, { name: 'question_id' }]
+    }
+  ]
 });
 
 module.exports = QuizAnswer;

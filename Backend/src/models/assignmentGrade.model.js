@@ -3,7 +3,7 @@ const sequelize = require('../config/db');
 
 const AssignmentGrade = sequelize.define('AssignmentGrade', {
   id: { type: DataTypes.BIGINT.UNSIGNED, primaryKey: true, autoIncrement: true },
-  submissionId: { type: DataTypes.BIGINT.UNSIGNED, allowNull: false, unique: true, field: 'submission_id' },
+  submissionId: { type: DataTypes.BIGINT.UNSIGNED, allowNull: false, field: 'submission_id' },
   gradedBy: { type: DataTypes.BIGINT.UNSIGNED, allowNull: false, field: 'graded_by' },
   marksAwarded: { type: DataTypes.DECIMAL(6, 2), allowNull: false, defaultValue: 0, field: 'marks_awarded' },
   feedback: { type: DataTypes.TEXT('long') },
@@ -16,7 +16,17 @@ const AssignmentGrade = sequelize.define('AssignmentGrade', {
 }, {
   tableName: 'assignment_grades',
   underscored: true,
-  timestamps: false
+  timestamps: false,
+  indexes: [
+    {
+      name: 'uq_grade_submission',
+      unique: true,
+      fields: [{ name: 'submission_id' }]
+    },
+    { name: 'idx_grades_submission', fields: [{ name: 'submission_id' }] },
+    { name: 'idx_grades_teacher', fields: [{ name: 'graded_by' }] },
+    { name: 'idx_grades_status', fields: [{ name: 'status' }] }
+  ]
 });
 
 module.exports = AssignmentGrade;

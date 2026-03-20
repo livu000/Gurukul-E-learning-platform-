@@ -9,7 +9,7 @@ const QuizAttempt = sequelize.define('QuizAttempt', {
   status: { type: DataTypes.STRING(20), allowNull: false, defaultValue: 'in_progress', validate: { isIn: [['in_progress', 'submitted', 'evaluated', 'expired']] } },
   startedAt: { type: DataTypes.DATE, allowNull: false, defaultValue: DataTypes.NOW, field: 'started_at' },
   submittedAt: { type: DataTypes.DATE, field: 'submitted_at' },
-  timeSpentSeconds: { type: DataTypes.INTEGER, allowNull: false, defaultValue: 0, field: 'time_spent_seconds' },
+  timeSpentSeconds: { type: DataTypes.INTEGER, defaultValue: 0, field: 'time_spent_seconds' },
   score: { type: DataTypes.DECIMAL(6, 2), defaultValue: 0 },
   totalMarks: { type: DataTypes.DECIMAL(6, 2), defaultValue: 0, field: 'total_marks' },
   isPassed: { type: DataTypes.BOOLEAN, defaultValue: false, field: 'is_passed' },
@@ -19,7 +19,18 @@ const QuizAttempt = sequelize.define('QuizAttempt', {
   underscored: true,
   timestamps: true,
   createdAt: 'created_at',
-  updatedAt: 'updated_at'
+  updatedAt: 'updated_at',
+  indexes: [
+    { name: 'idx_attempt_quiz', fields: [{ name: 'quiz_id' }] },
+    { name: 'idx_attempt_student', fields: [{ name: 'student_id' }] },
+    { name: 'idx_attempt_status', fields: [{ name: 'status' }] },
+    { name: 'idx_attempt_quiz_student', fields: [{ name: 'quiz_id' }, { name: 'student_id' }] },
+    {
+      name: 'uq_attempt_number',
+      unique: true,
+      fields: [{ name: 'quiz_id' }, { name: 'student_id' }, { name: 'attempt_number' }]
+    }
+  ]
 });
 
 module.exports = QuizAttempt;

@@ -20,7 +20,18 @@ const Enrollment = sequelize.define('Enrollment', {
   paranoid: true,
   createdAt: 'created_at',
   updatedAt: 'updated_at',
-  deletedAt: 'deleted_at'
+  deletedAt: 'deleted_at',
+  indexes: [
+    {
+      name: 'uq_enrollment_user_course',
+      unique: true,
+      fields: [{ name: 'user_id' }, { name: 'course_id' }]
+    },
+    { name: 'idx_enrollment_user', fields: [{ name: 'user_id' }] },
+    { name: 'idx_enrollment_course', fields: [{ name: 'course_id' }] },
+    { name: 'idx_enrollment_status', fields: [{ name: 'status' }] },
+    { name: 'idx_enrollment_payment', fields: [{ name: 'payment_id' }] }
+  ]
 });
 
 module.exports = Enrollment;

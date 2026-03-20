@@ -25,7 +25,18 @@ const LessonProgress = sequelize.define('LessonProgress', {
   underscored: true,
   timestamps: true,
   createdAt: 'created_at',
-  updatedAt: 'updated_at'
+  updatedAt: 'updated_at',
+  indexes: [
+    {
+      name: 'uq_progress_user_lesson',
+      unique: true,
+      fields: [{ name: 'user_id' }, { name: 'lesson_id' }]
+    },
+    { name: 'idx_progress_user', fields: [{ name: 'user_id' }] },
+    { name: 'idx_progress_course', fields: [{ name: 'course_id' }] },
+    { name: 'idx_progress_lesson', fields: [{ name: 'lesson_id' }] },
+    { name: 'idx_progress_completion', fields: [{ name: 'is_completed' }] }
+  ]
 });
 
 module.exports = LessonProgress;

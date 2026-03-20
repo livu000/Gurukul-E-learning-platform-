@@ -13,11 +13,20 @@ const AuditLog = sequelize.define('AuditLog', {
   ipAddress: { type: DataTypes.STRING(100), field: 'ip_address' },
   userAgent: { type: DataTypes.TEXT, field: 'user_agent' },
   status: { type: DataTypes.STRING(20), defaultValue: 'success' },
-  createdAt: { type: DataTypes.DATE, allowNull: false, defaultValue: DataTypes.NOW, field: 'created_at' }
+  createdAt: { type: DataTypes.DATE, defaultValue: DataTypes.NOW, field: 'created_at' }
 }, {
   tableName: 'audit_logs',
   underscored: true,
-  timestamps: false
+  timestamps: false,
+  indexes: [
+    { name: 'idx_audit_user', fields: [{ name: 'user_id' }] },
+    { name: 'idx_audit_action', fields: [{ name: 'action' }] },
+    { name: 'idx_audit_created', fields: [{ name: 'created_at' }] },
+    {
+      name: 'idx_audit_entity',
+      fields: [{ name: 'entity_type' }, { name: 'entity_id' }]
+    }
+  ]
 });
 
 module.exports = AuditLog;

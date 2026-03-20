@@ -28,7 +28,13 @@ const Invoice = sequelize.define('Invoice', {
   underscored: true,
   timestamps: true,
   createdAt: 'created_at',
-  updatedAt: 'updated_at'
+  updatedAt: 'updated_at',
+  indexes: [
+    { name: 'idx_invoice_user', fields: [{ name: 'user_id' }] },
+    { name: 'idx_invoice_course', fields: [{ name: 'course_id' }] },
+    { name: 'idx_invoice_payment', fields: [{ name: 'payment_id' }] },
+    { name: 'idx_invoice_status', fields: [{ name: 'status' }] }
+  ]
 });
 
 module.exports = Invoice;

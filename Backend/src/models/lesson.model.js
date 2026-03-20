@@ -15,7 +15,7 @@ const Lesson = sequelize.define('Lesson', {
   sortOrder: { type: DataTypes.INTEGER, allowNull: false, defaultValue: 1, field: 'sort_order' },
   isPublished: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: false, field: 'is_published' },
   videoProvider: { type: DataTypes.STRING(50), field: 'video_provider' },
-  videoDurationSeconds: { type: DataTypes.INTEGER, allowNull: false, defaultValue: 0, field: 'video_duration_seconds' }
+  videoDurationSeconds: { type: DataTypes.INTEGER, defaultValue: 0, field: 'video_duration_seconds' }
 }, {
   tableName: 'lessons',
   underscored: true,
@@ -23,7 +23,12 @@ const Lesson = sequelize.define('Lesson', {
   paranoid: true,
   createdAt: 'created_at',
   updatedAt: 'updated_at',
-  deletedAt: 'deleted_at'
+  deletedAt: 'deleted_at',
+  indexes: [
+    { name: 'idx_lessons_module', fields: [{ name: 'module_id' }] },
+    { name: 'idx_lessons_module_order', fields: [{ name: 'module_id' }, { name: 'sort_order' }] },
+    { name: 'idx_lessons_preview', fields: [{ name: 'is_preview' }] }
+  ]
 });
 
 module.exports = Lesson;

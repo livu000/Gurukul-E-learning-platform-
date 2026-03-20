@@ -17,7 +17,11 @@ const Module = sequelize.define('Module', {
   paranoid: true,
   createdAt: 'created_at',
   updatedAt: 'updated_at',
-  deletedAt: 'deleted_at'
+  deletedAt: 'deleted_at',
+  indexes: [
+    { name: 'idx_modules_course', fields: [{ name: 'course_id' }] },
+    { name: 'idx_modules_course_order', fields: [{ name: 'course_id' }, { name: 'sort_order' }] }
+  ]
 });
 
 module.exports = Module;

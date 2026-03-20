@@ -18,7 +18,13 @@ const Payment = sequelize.define('Payment', {
   underscored: true,
   timestamps: true,
   createdAt: 'created_at',
-  updatedAt: 'updated_at'
+  updatedAt: 'updated_at',
+  indexes: [
+    { name: 'idx_payment_user', fields: [{ name: 'user_id' }] },
+    { name: 'idx_payment_course', fields: [{ name: 'course_id' }] },
+    { name: 'idx_payment_status', fields: [{ name: 'status' }] },
+    { name: 'idx_payment_provider', fields: [{ name: 'provider_payment_id' }] }
+  ]
 });
 
 module.exports = Payment;

@@ -14,7 +14,12 @@ const QuizOption = sequelize.define('QuizOption', {
   paranoid: true,
   createdAt: 'created_at',
   updatedAt: 'updated_at',
-  deletedAt: 'deleted_at'
+  deletedAt: 'deleted_at',
+  indexes: [
+    { name: 'idx_options_question', fields: [{ name: 'question_id' }] },
+    { name: 'idx_options_correct', fields: [{ name: 'question_id' }, { name: 'is_correct' }] },
+    { name: 'idx_options_order', fields: [{ name: 'question_id' }, { name: 'sort_order' }] }
+  ]
 });
 
 module.exports = QuizOption;

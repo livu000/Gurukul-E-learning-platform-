@@ -30,7 +30,20 @@ const Course = sequelize.define('Course', {
   paranoid: true,
   createdAt: 'created_at',
   updatedAt: 'updated_at',
-  deletedAt: 'deleted_at'
+  deletedAt: 'deleted_at',
+  indexes: [
+    { name: 'idx_courses_teacher', fields: [{ name: 'teacher_id' }] },
+    { name: 'idx_courses_status', fields: [{ name: 'status' }] },
+    { name: 'idx_courses_approval', fields: [{ name: 'approval_status' }] },
+    { name: 'idx_courses_category', fields: [{ name: 'category' }] },
+    { name: 'idx_courses_price', fields: [{ name: 'price' }] },
+    { name: 'idx_courses_teacher_status', fields: [{ name: 'teacher_id' }, { name: 'status' }] },
+    {
+      name: 'idx_courses_search',
+      type: 'FULLTEXT',
+      fields: [{ name: 'title' }, { name: 'subtitle' }, { name: 'description' }]
+    }
+  ]
 });
 
 module.exports = Course;

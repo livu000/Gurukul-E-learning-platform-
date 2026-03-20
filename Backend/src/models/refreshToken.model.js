@@ -16,7 +16,12 @@ const RefreshToken = sequelize.define('RefreshToken', {
   underscored: true,
   timestamps: true,
   createdAt: 'created_at',
-  updatedAt: 'updated_at'
+  updatedAt: 'updated_at',
+  indexes: [
+    { name: 'idx_rt_user', fields: [{ name: 'user_id' }] },
+    { name: 'idx_rt_expires', fields: [{ name: 'expires_at' }] },
+    { name: 'idx_rt_revoked', fields: [{ name: 'revoked_at' }] }
+  ]
 });
 
 module.exports = RefreshToken;

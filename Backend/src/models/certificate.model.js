@@ -18,7 +18,21 @@ const Certificate = sequelize.define('Certificate', {
   underscored: true,
   timestamps: true,
   createdAt: 'created_at',
-  updatedAt: 'updated_at'
+  updatedAt: 'updated_at',
+  indexes: [
+    {
+      name: 'uq_user_course_certificate',
+      unique: true,
+      fields: [{ name: 'user_id' }, { name: 'course_id' }]
+    },
+    { name: 'idx_certificate_user', fields: [{ name: 'user_id' }] },
+    { name: 'idx_certificate_course', fields: [{ name: 'course_id' }] },
+    { name: 'idx_certificate_enrollment', fields: [{ name: 'enrollment_id' }] },
+    {
+      name: 'idx_certificate_verification',
+      fields: [{ name: 'certificate_uid' }, { name: 'verification_code' }]
+    }
+  ]
 });
 
 module.exports = Certificate;

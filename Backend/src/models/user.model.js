@@ -19,7 +19,11 @@ const User = sequelize.define('User', {
   paranoid: true,
   createdAt: 'created_at',
   updatedAt: 'updated_at',
-  deletedAt: 'deleted_at'
+  deletedAt: 'deleted_at',
+  indexes: [
+    { name: 'idx_users_role', fields: [{ name: 'role' }] },
+    { name: 'idx_users_status', fields: [{ name: 'status' }] }
+  ]
 });
 
 module.exports = User;
