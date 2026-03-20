@@ -1,3 +1,4 @@
+const { Op } = require('sequelize');
 const { Enrollment, Lesson, Module, Quiz, QuizAttempt, Assignment } = require('../models');
 
 exports.ensureEnrolled = async (req, res, next) => {
@@ -14,8 +15,8 @@ exports.ensureEnrolled = async (req, res, next) => {
       if (!quiz) return res.status(404).json({ message: 'Quiz not found' });
       courseId = quiz.courseId;
     }
-    if (!courseId && req.body.assignmentId) {
-      const assignment = await Assignment.findByPk(req.body.assignmentId);
+    if (!courseId && (req.body.assignmentId || req.params.assignmentId)) {
+      const assignment = await Assignment.findByPk(req.body.assignmentId || req.params.assignmentId);
       if (!assignment) return res.status(404).json({ message: 'Assignment not found' });
       courseId = assignment.courseId;
     }
@@ -25,7 +26,13 @@ exports.ensureEnrolled = async (req, res, next) => {
       courseId = attempt.quiz.courseId;
     }
     if (!courseId) return res.status(400).json({ message: 'Unable to determine course for enrollment check' });
-    const enrollment = await Enrollment.findOne({ where: { userId: req.user.id, courseId, status: ['active', 'completed'] } });
+    const enrollment = await Enrollment.findOne({
+      where: {
+        userId: req.user.id,
+        courseId,
+        status: { [Op.in]: ['active', 'completed'] }
+      }
+    });
     if (!enrollment) return res.status(403).json({ message: 'You are not enrolled in this course' });
     return next();
   } catch (error) {

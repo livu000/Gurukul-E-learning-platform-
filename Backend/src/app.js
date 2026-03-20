@@ -10,6 +10,7 @@ const paymentRoutes = require('./routes/payment.routes');
 const { apiLimiter } = require('./middleware/rateLimit.middleware');
 
 const app = express();
+app.disable('x-powered-by');
 
 const defaultAllowedOrigins = [
   'http://localhost:5173',
@@ -36,9 +37,21 @@ app.use(cors({
 }));
 
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 app.get('/', (req, res) => {
-  res.send('Backend is running');
+  res.json({
+    name: 'Gurukul Backend API',
+    status: 'ok'
+  });
+});
+
+app.get('/health', (req, res) => {
+  res.json({
+    status: 'ok',
+    service: 'gurukul-backend',
+    timestamp: new Date().toISOString()
+  });
 });
 
 app.use('/api', apiLimiter);
@@ -59,5 +72,19 @@ app.use('/api/dashboard', adminDashboardRoutes);
 app.use('/api/enrollments', enrollmentRoutes);
 app.use('/api/payments', paymentRoutes);
 app.use('/api/audit-logs', require('./routes/audit.routes'));
+
+app.use('/api', (req, res) => {
+  return res.status(404).json({ message: 'API route not found' });
+});
+
+app.use((err, req, res, next) => {
+  console.error(err);
+  if (res.headersSent) {
+    return next(err);
+  }
+  return res.status(err.status || 500).json({
+    message: err.message || 'Internal server error'
+  });
+});
 
 module.exports = app;

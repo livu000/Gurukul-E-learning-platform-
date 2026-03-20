@@ -3,6 +3,7 @@ const { Op } = require('sequelize');
 const { Course, Enrollment, Invoice, Payment, Transaction, User } = require('../models');
 const sequelize = require('../config/db');
 const { buildSimplePdf } = require('../utils/document.util');
+const { logAudit } = require('../utils/audit.util');
 
 function buildInvoicePdf(invoice, payment, course, user) {
   const invoiceDate = new Date(invoice.invoiceDate || invoice.createdAt).toLocaleDateString('en-IN', {
@@ -59,6 +60,19 @@ exports.createPayment = async (req, res) => {
       return res.status(409).json({ message: 'Already enrolled' });
     }
 
+    const existingPending = await Payment.findOne({
+      where: {
+        userId: req.user.id,
+        courseId,
+        status: 'pending'
+      },
+      order: [['createdAt', 'DESC']]
+    });
+
+    if (existingPending) {
+      return res.status(201).json(existingPending);
+    }
+
     const payment = await Payment.create({
       userId: req.user.id,
       courseId,
@@ -68,6 +82,14 @@ exports.createPayment = async (req, res) => {
       providerOrderId: req.body.providerOrderId || `order_${Date.now()}`,
       status: 'pending',
       transactionRef: crypto.randomUUID()
+    });
+
+    await logAudit({
+      req,
+      action: 'CREATE_PAYMENT',
+      entityType: 'payments',
+      entityId: payment.id,
+      newData: payment.toJSON()
     });
 
     return res.status(201).json(payment);
@@ -178,6 +200,13 @@ exports.verifyPayment = async (req, res) => {
     });
 
     await tx.commit();
+    await logAudit({
+      req,
+      action: 'VERIFY_PAYMENT',
+      entityType: 'payments',
+      entityId: payment.id,
+      newData: payment.toJSON()
+    });
     return res.json({ message: 'Payment verified and enrollment created', payment });
   } catch (err) {
     console.error('verifyPayment error:', err);
@@ -206,6 +235,101 @@ exports.getMyPayments = async (req, res) => {
   } catch (err) {
     console.error('getMyPayments error:', err);
     return res.status(500).json({ message: 'Failed to fetch payments' });
+  }
+};
+
+exports.getAllPayments = async (req, res) => {
+  try {
+    const payments = await Payment.findAll({
+      include: [
+        { model: Course, as: 'course', attributes: ['id', 'title'] },
+        { model: User, as: 'user', attributes: ['id', 'name', 'email'] },
+        { model: Invoice, as: 'invoice' },
+        { model: Transaction, as: 'transactions' }
+      ],
+      order: [['createdAt', 'DESC']]
+    });
+
+    return res.json(payments);
+  } catch (err) {
+    console.error('getAllPayments error:', err);
+    return res.status(500).json({ message: 'Failed to fetch payments' });
+  }
+};
+
+exports.refundPayment = async (req, res) => {
+  const tx = await sequelize.transaction();
+
+  try {
+    const payment = await Payment.findByPk(req.params.paymentId, {
+      include: [{ model: Course, as: 'course' }],
+      transaction: tx
+    });
+
+    if (!payment) {
+      await tx.rollback();
+      return res.status(404).json({ message: 'Payment not found' });
+    }
+
+    if (payment.status !== 'success') {
+      await tx.rollback();
+      return res.status(400).json({ message: 'Only successful payments can be refunded' });
+    }
+
+    await payment.update({
+      status: 'refunded',
+      refundedAt: new Date()
+    }, { transaction: tx });
+
+    await Enrollment.update({
+      status: 'refunded'
+    }, {
+      where: { paymentId: payment.id },
+      transaction: tx
+    });
+
+    await Invoice.update({
+      status: 'refunded'
+    }, {
+      where: { paymentId: payment.id },
+      transaction: tx
+    });
+
+    await Transaction.create({
+      paymentId: payment.id,
+      provider: payment.paymentProvider || 'mock',
+      eventType: 'refund.processed',
+      providerOrderId: payment.providerOrderId,
+      providerPaymentId: payment.providerPaymentId,
+      providerEventId: crypto.randomUUID(),
+      requestPayload: { reason: req.body.reason || 'Admin refund' },
+      responsePayload: { status: 'refunded' },
+      status: 'processed',
+      isProcessed: true,
+      processedAt: new Date()
+    }, { transaction: tx });
+
+    if (payment.course) {
+      await payment.course.update({
+        enrollCount: Math.max(0, Number(payment.course.enrollCount || 0) - 1)
+      }, { transaction: tx });
+    }
+
+    await tx.commit();
+
+    await logAudit({
+      req,
+      action: 'REFUND_PAYMENT',
+      entityType: 'payments',
+      entityId: payment.id,
+      newData: { paymentId: payment.id, status: 'refunded' }
+    });
+
+    return res.json({ message: 'Payment refunded successfully', paymentId: payment.id });
+  } catch (err) {
+    console.error('refundPayment error:', err);
+    await tx.rollback();
+    return res.status(500).json({ message: 'Failed to refund payment' });
   }
 };
 

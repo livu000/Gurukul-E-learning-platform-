@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 
 const authController = require('../controllers/auth.controller');
+const { authenticate } = require('../middleware/auth.middleware');
 const { loginLimiter } = require('../middleware/rateLimit.middleware');
 
 // ===============================
@@ -19,7 +20,31 @@ router.post(
 // ===============================
 router.post(
   '/refresh',
-  authController.refreshToken   // ✅ fixed typo
+  authController.refreshToken
+);
+
+router.get(
+  '/me',
+  authenticate,
+  authController.me
+);
+
+router.get(
+  '/sessions',
+  authenticate,
+  authController.getSessions
+);
+
+router.post(
+  '/logout',
+  authenticate,
+  authController.logout
+);
+
+router.post(
+  '/logout-all',
+  authenticate,
+  authController.logoutAll
 );
 
 module.exports = router;

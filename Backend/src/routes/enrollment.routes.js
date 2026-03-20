@@ -1,5 +1,6 @@
 const router = require('express').Router();
 const { authenticate } = require('../middleware/auth.middleware');
+const { authorizeRoles } = require('../middleware/role.middleware');
 const enrollmentController = require('../controllers/enrollment.controller');
 
 /**
@@ -38,6 +39,20 @@ router.get(
     next();
   },
   enrollmentController.getMyEnrollments
+);
+
+router.get(
+  '/course/:courseId',
+  authenticate,
+  authorizeRoles('teacher', 'admin'),
+  enrollmentController.getCourseEnrollments
+);
+
+router.get(
+  '/completions',
+  authenticate,
+  authorizeRoles('admin'),
+  enrollmentController.getCompletionRecords
 );
 
 module.exports = router;

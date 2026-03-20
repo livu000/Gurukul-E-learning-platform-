@@ -8,16 +8,37 @@ const controller = require('../controllers/quizQuestion.controller');
 router.post(
   '/question',
   authenticate,
-  authorizeRoles('teacher'),
+  authorizeRoles('teacher', 'admin'),
   controller.addQuestion
+);
+
+router.patch(
+  '/question/:questionId',
+  authenticate,
+  authorizeRoles('teacher', 'admin'),
+  controller.updateQuestion
+);
+
+router.delete(
+  '/question/:questionId',
+  authenticate,
+  authorizeRoles('teacher', 'admin'),
+  controller.deleteQuestion
 );
 
 // Add MCQ options
 router.post(
   '/options',
   authenticate,
-  authorizeRoles('teacher'),
+  authorizeRoles('teacher', 'admin'),
   controller.addOptions
+);
+
+router.patch(
+  '/quiz/:quizId/reorder',
+  authenticate,
+  authorizeRoles('teacher', 'admin'),
+  controller.reorderQuestions
 );
 
 router.get(

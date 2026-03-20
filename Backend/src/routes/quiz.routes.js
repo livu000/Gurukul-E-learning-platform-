@@ -25,11 +25,32 @@ router.get(
   quizController.getTeacherQuizzes
 );
 
+router.get(
+  '/:id',
+  authenticate,
+  authorizeRoles('student', 'teacher', 'admin'),
+  quizController.getQuizById
+);
+
+router.patch(
+  '/:id',
+  authenticate,
+  authorizeRoles('teacher', 'admin'),
+  quizController.updateQuiz
+);
+
 router.patch(
   '/:id/publish',
   authenticate,
   authorizeRoles('teacher', 'admin'),
   quizController.publishQuiz
+);
+
+router.delete(
+  '/:id',
+  authenticate,
+  authorizeRoles('teacher', 'admin'),
+  quizController.deleteQuiz
 );
 
 module.exports = router;

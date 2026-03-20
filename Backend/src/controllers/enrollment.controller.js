@@ -1,4 +1,7 @@
-const { Enrollment, Course, Payment } = require('../models');
+const { Op } = require('sequelize');
+const { Enrollment, Course, Payment, User } = require('../models');
+const { canManageCourse } = require('../utils/lms.util');
+const { logAudit } = require('../utils/audit.util');
 
 exports.enrollInCourse = async (req, res) => {
   try {
@@ -14,6 +17,13 @@ exports.enrollInCourse = async (req, res) => {
     if (!created) return res.status(409).json({ message: 'Already enrolled in this course' });
     course.enrollCount = Number(course.enrollCount || 0) + 1;
     await course.save();
+    await logAudit({
+      req,
+      action: 'ENROLL_IN_COURSE',
+      entityType: 'enrollments',
+      entityId: enrollment.id,
+      newData: enrollment.toJSON()
+    });
     return res.status(201).json(enrollment);
   } catch (error) {
     console.error('Enrollment error:', error);
@@ -28,5 +38,49 @@ exports.getMyEnrollments = async (req, res) => {
   } catch (error) {
     console.error('Fetch enrollments error:', error);
     return res.status(500).json({ message: 'Failed to fetch enrollments' });
+  }
+};
+
+exports.getCourseEnrollments = async (req, res) => {
+  try {
+    const course = await Course.findByPk(req.params.courseId);
+    if (!course) return res.status(404).json({ message: 'Course not found' });
+    if (!canManageCourse(req.user, course)) {
+      return res.status(403).json({ message: 'Not your course' });
+    }
+
+    const enrollments = await Enrollment.findAll({
+      where: { courseId: course.id },
+      include: [
+        { model: User, as: 'user', attributes: ['id', 'name', 'email', 'status'] },
+        { model: Payment, as: 'payment' }
+      ],
+      order: [['updatedAt', 'DESC']]
+    });
+
+    return res.json(enrollments);
+  } catch (error) {
+    console.error('Fetch course enrollments error:', error);
+    return res.status(500).json({ message: 'Failed to fetch course enrollments' });
+  }
+};
+
+exports.getCompletionRecords = async (req, res) => {
+  try {
+    const completions = await Enrollment.findAll({
+      where: {
+        status: { [Op.in]: ['completed', 'active'] }
+      },
+      include: [
+        { model: User, as: 'user', attributes: ['id', 'name', 'email'] },
+        { model: Course, as: 'course', attributes: ['id', 'title'] }
+      ],
+      order: [['updatedAt', 'DESC']]
+    });
+
+    return res.json(completions);
+  } catch (error) {
+    console.error('Fetch completion records error:', error);
+    return res.status(500).json({ message: 'Failed to fetch completion records' });
   }
 };

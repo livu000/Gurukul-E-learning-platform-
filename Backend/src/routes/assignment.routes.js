@@ -14,10 +14,24 @@ router.post(
 );
 
 router.get(
+  '/my-submissions',
+  authenticate,
+  authorizeRoles('student'),
+  controller.getMySubmissions
+);
+
+router.get(
   '/:assignmentId/submissions',
   authenticate,
   authorizeRoles('teacher', 'admin'),
   controller.getSubmissionsByAssignment
+);
+
+router.get(
+  '/:assignmentId',
+  authenticate,
+  authorizeRoles('student', 'teacher', 'admin'),
+  controller.getAssignmentById
 );
 
 router.post(
@@ -25,6 +39,27 @@ router.post(
   authenticate,
   authorizeRoles('teacher', 'admin'),
   controller.gradeSubmission
+);
+
+router.patch(
+  '/:assignmentId',
+  authenticate,
+  authorizeRoles('teacher', 'admin'),
+  controller.updateAssignment
+);
+
+router.patch(
+  '/:assignmentId/publish',
+  authenticate,
+  authorizeRoles('teacher', 'admin'),
+  controller.publishAssignment
+);
+
+router.delete(
+  '/:assignmentId',
+  authenticate,
+  authorizeRoles('teacher', 'admin'),
+  controller.deleteAssignment
 );
 
 router.put(
@@ -40,7 +75,7 @@ router.put(
 router.get(
   '/course/:courseId',
   authenticate,
-  authorizeRoles('student', 'teacher'),
+  authorizeRoles('student', 'teacher', 'admin'),
   controller.getAssignmentsByCourse
 );
 

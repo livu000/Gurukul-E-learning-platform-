@@ -27,6 +27,20 @@ router.get(
 );
 
 router.get(
+  '/admin',
+  authenticate,
+  authorizeRoles('admin'),
+  controller.getAllPayments
+);
+
+router.post(
+  '/:paymentId/refund',
+  authenticate,
+  authorizeRoles('admin'),
+  controller.refundPayment
+);
+
+router.get(
   '/:paymentId/invoice',
   authenticate,
   controller.downloadInvoice

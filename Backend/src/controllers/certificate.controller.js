@@ -1,6 +1,7 @@
 const crypto = require('crypto');
 const { Certificate, Course, Enrollment, User } = require('../models');
 const { buildSimplePdf } = require('../utils/document.util');
+const { logAudit } = require('../utils/audit.util');
 
 function buildCertificatePayload(certificate) {
   return {
@@ -74,11 +75,65 @@ const issueCertificate = async (req, res) => {
     });
 
     await enrollment.update({ certificateIssued: true });
+    await logAudit({
+      req,
+      action: 'ISSUE_CERTIFICATE',
+      entityType: 'certificates',
+      entityId: certificate.id,
+      newData: buildCertificatePayload(certificate)
+    });
 
     return res.json(buildCertificatePayload(certificate));
   } catch (err) {
     console.error(err);
     return res.status(500).json({ message: err.message || 'Failed to issue certificate' });
+  }
+};
+
+const getIssuedCertificates = async (req, res) => {
+  try {
+    const certificates = await Certificate.findAll({
+      include: [
+        { model: Course, as: 'course', attributes: ['id', 'title'] },
+        { model: User, as: 'user', attributes: ['id', 'name', 'email'] },
+        { model: Enrollment, as: 'enrollment', attributes: ['id', 'status', 'completedAt', 'progressPercentage'] }
+      ],
+      order: [['issuedAt', 'DESC']]
+    });
+
+    return res.json(certificates);
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ message: 'Failed to load issued certificates' });
+  }
+};
+
+const revokeCertificate = async (req, res) => {
+  try {
+    const certificate = await Certificate.findOne({
+      where: { certificateUid: req.params.certificateId }
+    });
+
+    if (!certificate) {
+      return res.status(404).json({ message: 'Certificate not found' });
+    }
+
+    const oldData = buildCertificatePayload(certificate);
+    await certificate.update({ isValid: false });
+
+    await logAudit({
+      req,
+      action: 'REVOKE_CERTIFICATE',
+      entityType: 'certificates',
+      entityId: certificate.id,
+      oldData,
+      newData: buildCertificatePayload(certificate)
+    });
+
+    return res.json({ message: 'Certificate revoked successfully' });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ message: 'Failed to revoke certificate' });
   }
 };
 
@@ -163,6 +218,8 @@ const downloadCertificate = async (req, res) => {
 module.exports = {
   issueCertificate,
   getMyCertificates,
+  getIssuedCertificates,
+  revokeCertificate,
   verifyCertificate,
   downloadCertificate
 };

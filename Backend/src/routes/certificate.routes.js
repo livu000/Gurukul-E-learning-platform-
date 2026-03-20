@@ -2,12 +2,12 @@ const express = require("express");
 const router = express.Router();
 
 const { authenticate } = require("../middleware/auth.middleware");
-//console.log("DEBUG auth =>", authenticate);
+const { authorizeRoles } = require("../middleware/role.middleware");
 const certificateController = require("../controllers/certificate.controller");
-//console.log("DEBUG controller import =>", certificateController);
 router.post(
   "/course/:courseId/issue",
   authenticate,
+  authorizeRoles('student'),
   certificateController.issueCertificate
 );
 
@@ -18,9 +18,23 @@ router.get(
 );
 
 router.get(
+  "/issued",
+  authenticate,
+  authorizeRoles('admin'),
+  certificateController.getIssuedCertificates
+);
+
+router.get(
   "/:certificateId/download",
   authenticate,
   certificateController.downloadCertificate
+);
+
+router.patch(
+  "/:certificateId/revoke",
+  authenticate,
+  authorizeRoles('admin'),
+  certificateController.revokeCertificate
 );
 
 router.get(
