@@ -13,4 +13,11 @@ router.post(
   controller.startQuiz
 );
 
+router.get(
+  '/:attemptId',
+  authenticate,
+  authorizeRoles('student', 'teacher', 'admin'),
+  controller.getAttemptResult
+);
+
 module.exports = router;

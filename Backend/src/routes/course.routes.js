@@ -12,6 +12,7 @@ const { Course } = require('../models');
 
 // GET courses (no audit)
 router.get('/', optionalAuth, courseController.getAllCourses);
+router.get('/:id', optionalAuth, courseController.getCourseById);
 
 
 // CREATE course (no OLD data needed)

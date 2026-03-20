@@ -27,6 +27,10 @@ exports.createPayment = async (req, res) => {
       return res.status(404).json({ message: 'Course not found' });
     }
 
+    if (course.status !== 'published') {
+      return res.status(400).json({ message: 'Only published courses can be purchased' });
+    }
+
     // Course must be paid
     if (!course.isPaid) {
       return res.status(400).json({
@@ -83,6 +87,11 @@ exports.verifyPayment = async (req, res) => {
       return res.status(404).json({ message: 'Payment not found' });
     }
 
+    if (Number(payment.userId) !== Number(req.user.id)) {
+      await t.rollback();
+      return res.status(403).json({ message: 'You are not allowed to verify this payment' });
+    }
+
     // Prevent double verification
     if (payment.status === 'success') {
       await t.rollback();
@@ -104,6 +113,22 @@ exports.verifyPayment = async (req, res) => {
           message: 'Duplicate gateway verification detected'
         });
       }
+    }
+
+    const existingEnrollment = await Enrollment.findOne({
+      where: {
+        userId: payment.userId,
+        courseId: payment.courseId,
+        status: 'active'
+      },
+      transaction: t
+    });
+
+    if (existingEnrollment) {
+      await t.rollback();
+      return res.status(409).json({
+        message: 'Enrollment already exists for this payment'
+      });
     }
 
     // 1️⃣ Update payment
@@ -174,7 +199,12 @@ exports.getMyPayments = async (req, res) => {
 
     const payments = await Payment.findAll({
       where: { userId },
-      order: [['created_at', 'DESC']]
+      include: [{
+        model: Course,
+        as: 'course',
+        attributes: ['id', 'title', 'price']
+      }],
+      order: [['createdAt', 'DESC']]
     });
 
     return res.json(payments);

@@ -1,5 +1,4 @@
-import { Routes, Route, useNavigate } from "react-router-dom";
-import { useEffect } from "react";
+import { Routes, Route } from "react-router-dom";
 
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
@@ -18,7 +17,7 @@ import QuizResult from "./pages/QuizResult";
 import TeacherQuizList from "./pages/TeacherQuizList";
 import TeacherAssignments from "./pages/TeacherAssignments";
 import AssignmentSubmissions from "./pages/AssignmentSubmissions";
-import GradeSubmission from "./pages/GradeSubmission";
+import AdminUsers from "./pages/AdminUsers";
 
 import MyCertificates from "./pages/MyCertificates";
 import VerifyCertificate from "./pages/VerifyCertificate";
@@ -31,20 +30,6 @@ import MainLayout from "./components/common/MainLayout";
 import CourseBuilder from "./pages/CourseBuilder";
 
 function App() {
-
-  const navigate = useNavigate();
-
-  useEffect(() => {
-
-    const accessToken = localStorage.getItem("accessToken");
-    const refreshToken = localStorage.getItem("refreshToken");
-
-    if (accessToken || refreshToken) {
-      navigate("/dashboard");
-    }
-
-  }, [navigate]);
-
   return (
 
     <Routes>
@@ -58,51 +43,40 @@ function App() {
       {/* PROTECTED */}
 
       <Route element={<ProtectedRoute />}>
-
         <Route element={<MainLayout />}>
-
           <Route path="/dashboard" element={<Dashboard />} />
-
           <Route path="/courses" element={<CourseList />} />
           <Route path="/courses/:id" element={<CourseView />} />
-
           <Route path="/lessons/:lessonId" element={<LessonView />} />
+        </Route>
+      </Route>
 
+      <Route element={<ProtectedRoute roles={["student"]} />}>
+        <Route element={<MainLayout />}>
           <Route path="/courses/:courseId/assignments" element={<AssignmentsList />} />
           <Route path="/assignments/:assignmentId/submit" element={<AssignmentSubmit />} />
-
           <Route path="/courses/:courseId/quizzes" element={<QuizList />} />
           <Route path="/quiz/:quizId/attempt/:attemptId" element={<QuizAttempt />} />
           <Route path="/quiz/result/:attemptId" element={<QuizResult />} />
-
-          {/* COURSE CREATION */}
-
-          <Route path="/create-course" element={<CreateCourse />} />
-
-          {/* COURSE BUILDER (NEW) */}
-
-          <Route path="/teacher/course/:courseId/builder" element={<CourseBuilder />} />
-
-          {/* TEACHER */}
-
-          <Route path="/teacher/quizzes" element={<TeacherQuizList />} />
-
-          <Route path="/teacher/courses/:courseId/assignments" element={<TeacherAssignments />} />
-
-          {/* ASSIGNMENT GRADING */}
-
-          <Route path="/assignments/:assignmentId/submissions" element={<AssignmentSubmissions />} />
-
-          <Route path="/assignments/submissions/:submissionId/grade" element={<GradeSubmission />} />
-
-          {/* STUDENT */}
-
           <Route path="/my-certificates" element={<MyCertificates />} />
-
           <Route path="/my-payments" element={<MyPayments />} />
-
         </Route>
+      </Route>
 
+      <Route element={<ProtectedRoute roles={["teacher", "admin"]} />}>
+        <Route element={<MainLayout />}>
+          <Route path="/create-course" element={<CreateCourse />} />
+          <Route path="/teacher/course/:courseId/builder" element={<CourseBuilder />} />
+          <Route path="/teacher/quizzes" element={<TeacherQuizList />} />
+          <Route path="/teacher/courses/:courseId/assignments" element={<TeacherAssignments />} />
+          <Route path="/assignments/:assignmentId/submissions" element={<AssignmentSubmissions />} />
+        </Route>
+      </Route>
+
+      <Route element={<ProtectedRoute roles={["admin"]} />}>
+        <Route element={<MainLayout />}>
+          <Route path="/admin/users" element={<AdminUsers />} />
+        </Route>
       </Route>
 
       {/* PUBLIC CERTIFICATE */}

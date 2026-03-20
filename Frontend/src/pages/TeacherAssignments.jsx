@@ -157,7 +157,7 @@ function TeacherAssignments() {
             <div className="card-actions">
 
               <Link
-                to={`/teacher/assignments/${a.id}/submissions`}
+                to={`/assignments/${a.id}/submissions`}
                 className="btn btn-secondary"
               >
                 View Submissions

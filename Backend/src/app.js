@@ -10,13 +10,38 @@ const paymentRoutes = require('./routes/payment.routes');
 const { apiLimiter } = require('./middleware/rateLimit.middleware');
 
 const app = express();
-app.use(cors());
+
+const defaultAllowedOrigins = [
+  'http://localhost:5173',
+  'http://127.0.0.1:5173',
+  'http://localhost:3000',
+  'http://127.0.0.1:3000'
+];
+
+const allowedOrigins = (
+  process.env.CORS_ORIGINS
+    ? process.env.CORS_ORIGINS.split(',').map((origin) => origin.trim()).filter(Boolean)
+    : defaultAllowedOrigins
+);
+
+app.use(cors({
+  origin(origin, callback) {
+    if (!origin || allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+
+    return callback(new Error('CORS origin not allowed'));
+  },
+  credentials: true
+}));
+
 app.use(express.json());
 
 app.get('/', (req, res) => {
   res.send('Backend is running');
 });
-app .use('/api', apiLimiter); // Apply global rate limiter to all routes after this line
+
+app.use('/api', apiLimiter);
 app.use('/api/users', require('./routes/user.routes'));
 app.use('/api/auth', authRoutes);
 app.use('/api/courses', courseRoutes);
@@ -32,7 +57,7 @@ app.use("/api/certificates", require("./routes/certificate.routes"));
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/dashboard', adminDashboardRoutes);
 app.use('/api/enrollments', enrollmentRoutes);
-app.use('/api/payments', require('./routes/payment.routes'));
+app.use('/api/payments', paymentRoutes);
 app.use('/api/audit-logs', require('./routes/audit.routes'));
 
 module.exports = app;

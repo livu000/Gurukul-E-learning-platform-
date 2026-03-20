@@ -1,6 +1,9 @@
 import { useEffect, useState } from "react";
 
-import { getMyCertificates } from "../services/certificate.service";
+import {
+  downloadCertificate,
+  getMyCertificates
+} from "../services/certificate.service";
 
 import PageHeader from "../components/common/PageHeader";
 import SkeletonCard from "../components/common/SkeletonCard";
@@ -10,6 +13,25 @@ export default function MyCertificates() {
   const [certs, setCerts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+
+  const handleDownload = async (certificateId) => {
+    try {
+      const blob = await downloadCertificate(certificateId);
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+
+      link.href = url;
+      link.download = `certificate-${certificateId}.html`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error("Failed to download certificate", err);
+      alert(err.response?.data?.message || "Failed to download certificate");
+    }
+  };
 
   /* =========================
      LOAD CERTIFICATES
@@ -92,7 +114,7 @@ export default function MyCertificates() {
             >
 
               <p>
-                <strong>Course ID:</strong> {c.course_id}
+                <strong>Course:</strong> {c.course?.title || `Course ${c.course_id}`}
               </p>
 
               <p>
@@ -109,6 +131,14 @@ export default function MyCertificates() {
                 >
                   Verify
                 </a>
+
+                <button
+                  type="button"
+                  onClick={() => handleDownload(c.certificate_id)}
+                  className="btn btn-primary"
+                >
+                  Download
+                </button>
 
               </div>
 

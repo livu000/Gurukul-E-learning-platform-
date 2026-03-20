@@ -18,6 +18,12 @@ router.get(
 );
 
 router.get(
+  "/:certificateId/download",
+  authenticate,
+  certificateController.downloadCertificate
+);
+
+router.get(
   "/verify/:certificateId",
   certificateController.verifyCertificate
 );

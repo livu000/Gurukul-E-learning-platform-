@@ -10,6 +10,8 @@ function CreateCourse() {
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
+  const [isPaid, setIsPaid] = useState(false);
+  const [price, setPrice] = useState("");
 
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -33,6 +35,11 @@ function CreateCourse() {
       return;
     }
 
+    if (isPaid && (!price || Number(price) <= 0)) {
+      setError("Paid courses require a valid price");
+      return;
+    }
+
     setSubmitting(true);
     setError("");
     setSuccess("");
@@ -41,13 +48,17 @@ function CreateCourse() {
 
       await createCourse({
         title: cleanTitle,
-        description: cleanDescription
+        description: cleanDescription,
+        isPaid,
+        price: isPaid ? Number(price) : 0
       });
 
       setSuccess("Course created successfully");
 
       setTitle("");
       setDescription("");
+      setIsPaid(false);
+      setPrice("");
 
       // redirect to course list
       setTimeout(() => {
@@ -124,6 +135,42 @@ function CreateCourse() {
             />
 
           </div>
+
+          <div className="form-group">
+            <label className="form-label">
+              Course Type
+            </label>
+
+            <select
+              className="form-select"
+              value={isPaid ? "paid" : "free"}
+              onChange={(e) =>
+                setIsPaid(e.target.value === "paid")
+              }
+            >
+              <option value="free">Free</option>
+              <option value="paid">Paid</option>
+            </select>
+          </div>
+
+          {isPaid && (
+            <div className="form-group">
+              <label className="form-label">
+                Price
+              </label>
+
+              <input
+                type="number"
+                min="1"
+                className="form-input"
+                value={price}
+                onChange={(e) =>
+                  setPrice(e.target.value)
+                }
+                required={isPaid}
+              />
+            </div>
+          )}
 
           <button
             className="btn btn-primary"

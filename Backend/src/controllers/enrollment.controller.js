@@ -17,11 +17,23 @@ exports.enrollInCourse = async (req, res) => {
       });
     }
 
+    if (course.status !== 'published') {
+      return res.status(400).json({
+        message: 'Only published courses can be enrolled'
+      });
+    }
+
+    if (course.isPaid) {
+      return res.status(400).json({
+        message: 'Paid course — complete payment first'
+      });
+    }
+
     // 2️ Prevent duplicate enrollment
     const existingEnrollment = await Enrollment.findOne({
       where: {
-        user_id: userId,
-        course_id: courseId
+        userId,
+        courseId
       }
     });
 
@@ -33,8 +45,9 @@ exports.enrollInCourse = async (req, res) => {
 
     // 3️ Create enrollment
     const enrollment = await Enrollment.create({
-      user_id: userId,
-      course_id: courseId
+      userId,
+      courseId,
+      enrolledAt: new Date()
     });
 
     return res.status(201).json(enrollment);
@@ -55,8 +68,13 @@ exports.getMyEnrollments = async (req, res) => {
   try {
     const enrollments = await Enrollment.findAll({
       where: {
-        user_id: req.user.id
-      }
+        userId: req.user.id
+      },
+      include: [{
+        model: Course,
+        as: 'course'
+      }],
+      order: [['enrolledAt', 'DESC'], ['id', 'DESC']]
     });
 
     return res.json(enrollments);

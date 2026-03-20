@@ -1,16 +1,31 @@
-# React + Vite
+# Gurukul Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Frontend for the Gurukul e-learning platform.
 
-Currently, two official plugins are available:
+## Run
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+```bash
+npm install
+npm run dev
+```
 
-## React Compiler
+The frontend expects the backend API at `http://localhost:4000/api` by default.
+Override it with `VITE_API_URL` when needed.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Main flows covered in the current branch
 
-## Expanding the ESLint configuration
+- Role-based login and token refresh
+- Course list and course detail view
+- Free enrollment and paid course purchase verification flow
+- Lesson access and lesson completion tracking
+- Student quiz attempt flow and quiz results
+- Assignment submission and teacher grading
+- Teacher course builder for modules and lessons
+- Student, teacher, and admin dashboards
+- Certificate issue, verify, and download
+- Admin user management
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+## Notes
+
+- MySQL is managed manually outside the repo.
+- Use `../docs/manual-mysql-patches.md` before deploying schema-dependent backend changes.

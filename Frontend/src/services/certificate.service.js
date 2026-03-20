@@ -17,3 +17,11 @@ export const verifyCertificate = async (certificateId) => {
   const res = await api.get(`/certificates/verify/${certificateId}`);
   return res.data;
 };
+
+export const downloadCertificate = async (certificateId) => {
+  const res = await api.get(`/certificates/${certificateId}/download`, {
+    responseType: "blob"
+  });
+
+  return res.data;
+};

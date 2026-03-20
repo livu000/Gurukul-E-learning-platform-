@@ -1,4 +1,11 @@
-const { Enrollment, Lesson, Module, Quiz, QuizAttempt,Assignment } = require('../models');
+const {
+  Enrollment,
+  Lesson,
+  Module,
+  Quiz,
+  QuizAttempt,
+  Assignment
+} = require('../models');
 
 /**
  * Ensure the current user is enrolled in the course
@@ -23,7 +30,11 @@ exports.ensureEnrolled = async (req, res, next) => {
 
     // Case 1: courseId directly available
     if (req.params.courseId) {
-      courseId = req.params.courseId;
+      courseId = Number(req.params.courseId);
+    }
+
+    if (!courseId && req.body.courseId) {
+      courseId = Number(req.body.courseId);
     }
 
     // Case 2: lessonId → module → course
@@ -31,21 +42,20 @@ exports.ensureEnrolled = async (req, res, next) => {
       const lesson = await Lesson.findByPk(req.params.lessonId, {
         include: {
           model: Module,
-          attributes: ['course_id']
+          as: 'module',
+          attributes: ['courseId']
         }
       });
 
-      if (!lesson || !lesson.Module) {
+      if (!lesson || !lesson.module) {
         return res.status(404).json({
           message: 'Lesson not found'
         });
       }
 
-      courseId = lesson.Module.course_id;
+      courseId = lesson.module.courseId;
     }
-        /* ==============================
-       CASE 3: quizId → quiz → course  ✅ NEW
-    ============================== */
+
     if (!courseId && req.body.quizId) {
       const quiz = await Quiz.findByPk(req.body.quizId);
 
@@ -53,50 +63,60 @@ exports.ensureEnrolled = async (req, res, next) => {
         return res.status(404).json({ message: 'Quiz not found' });
       }
 
-      courseId = quiz.course_id;
+      courseId = quiz.courseId;
     }
+
+    if (!courseId && req.params.quizId) {
+      const quiz = await Quiz.findByPk(req.params.quizId);
+
+      if (!quiz) {
+        return res.status(404).json({ message: 'Quiz not found' });
+      }
+
+      courseId = quiz.courseId;
+    }
+
+    if (!courseId && req.body.assignmentId) {
+      const assignment = await Assignment.findByPk(req.body.assignmentId);
+
+      if (!assignment) {
+        return res.status(404).json({ message: 'Assignment not found' });
+      }
+
+      courseId = assignment.courseId;
+    }
+
+    const attemptId = req.body.quizAttemptId || req.body.attemptId || req.params.attemptId;
+
+    if (!courseId && attemptId) {
+      const attempt = await QuizAttempt.findByPk(attemptId, {
+        include: {
+          model: Quiz,
+          as: 'quiz',
+          attributes: ['courseId']
+        }
+      });
+
+      if (!attempt || !attempt.quiz) {
+        return res.status(404).json({ message: 'Quiz attempt not found' });
+      }
+
+      courseId = attempt.quiz.courseId;
+    }
+
     if (!courseId) {
       return res.status(400).json({
         message: 'Unable to determine course for enrollment check'
       });
     }
-     /* ==============================
-   CASE 4: assignmentId → assignment → course  ✅ NEW
-============================== */
-if (!courseId && req.body.assignmentId) {
-  const assignment = await Assignment.findByPk(req.body.assignmentId);
-
-  if (!assignment) {
-    return res.status(404).json({ message: 'Assignment not found' });
-  }
-
-  courseId = assignment.course_id;
-}
-/* ==============================
-   CASE 5: quizAttemptId → quizAttempt → quiz → course  ✅ NEW
-============================== */
-if (!courseId && req.body.quizAttemptId) {
-  const attempt = await QuizAttempt.findByPk(req.body.quizAttemptId, {
-    include: {
-      model: Quiz,
-      attributes: ['course_id']
-    }
-  });
-
-  if (!attempt || !attempt.Quiz) {
-    return res.status(404).json({ message: 'Quiz attempt not found' });
-  }
-
-  courseId = attempt.Quiz.course_id;
-}
 
     /* ==============================
        Enrollment verification
     ============================== */
     const enrollment = await Enrollment.findOne({
       where: {
-        user_id: userId,
-        course_id: courseId,
+        userId,
+        courseId,
         status: 'active'
       }
     });

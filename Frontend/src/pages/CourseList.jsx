@@ -25,8 +25,8 @@ function CourseList() {
   // =========================
   const loadCourses = async () => {
     try {
-      const res = await getCourses();
-      setCourses(res.data);
+      const data = await getCourses();
+      setCourses(data || []);
       setError("");
     } catch (err) {
       console.error(err);

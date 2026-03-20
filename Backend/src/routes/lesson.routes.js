@@ -50,4 +50,18 @@ router.post(
   controller.completeLesson
 );
 
+router.patch(
+  '/:id',
+  authenticate,
+  authorizeRoles('teacher', 'admin'),
+  controller.updateLesson
+);
+
+router.delete(
+  '/:id',
+  authenticate,
+  authorizeRoles('teacher', 'admin'),
+  controller.deleteLesson
+);
+
 module.exports = router;

@@ -78,7 +78,22 @@ export const createLesson = async (moduleId, lesson) => {
   return res.data;
 };
 
- export const deleteModule = async (moduleId) => {
+export const updateModule = async (moduleId, data) => {
+  const res = await api.patch(`/modules/${moduleId}`, data);
+  return res.data;
+};
+
+export const updateLesson = async (lessonId, data) => {
+  const res = await api.patch(`/lessons/${lessonId}`, data);
+  return res.data;
+};
+
+export const enrollInCourse = async (courseId) => {
+  const res = await api.post(`/enrollments/${courseId}`);
+  return res.data;
+};
+
+export const deleteModule = async (moduleId) => {
   const res = await api.delete(`/modules/${moduleId}`);
   return res.data;
 };

@@ -1,6 +1,4 @@
-const Quiz = require('../models/quiz.model');
-const QuizQuestion = require('../models/quizQuestion.model');
-const QuizOption = require('../models/quizOption.model');
+const { Quiz, QuizQuestion, QuizOption, Course } = require('../models');
 
 /**
  * Add question to quiz
@@ -104,5 +102,51 @@ exports.addOptions = async (req, res) => {
     res.status(500).json({
       message: 'Failed to add options'
     });
+  }
+};
+
+exports.getQuestionsByQuiz = async (req, res) => {
+  try {
+    const quiz = await Quiz.findByPk(req.params.quizId, {
+      include: [{
+        model: Course,
+        as: 'course',
+        attributes: ['teacherId']
+      }]
+    });
+
+    if (!quiz || !quiz.course) {
+      return res.status(404).json({ message: 'Quiz not found' });
+    }
+
+    if (req.user.role === 'student' && !quiz.isPublished) {
+      return res.status(403).json({ message: 'Quiz is not published yet' });
+    }
+
+    if (
+      req.user.role === 'teacher' &&
+      Number(quiz.course.teacherId) !== Number(req.user.id)
+    ) {
+      return res.status(403).json({ message: 'Not your course' });
+    }
+
+    const optionAttributes = req.user.role === 'student'
+      ? ['id', 'optionText']
+      : ['id', 'optionText', 'isCorrect'];
+
+    const questions = await QuizQuestion.findAll({
+      where: { quizId: quiz.id },
+      include: [{
+        model: QuizOption,
+        as: 'options',
+        attributes: optionAttributes
+      }],
+      order: [['sortOrder', 'ASC'], ['id', 'ASC']]
+    });
+
+    res.json(questions);
+  } catch (error) {
+    console.error('Get quiz questions error:', error);
+    res.status(500).json({ message: 'Failed to load quiz questions' });
   }
 };

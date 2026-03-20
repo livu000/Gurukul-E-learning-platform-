@@ -1,10 +1,10 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useParams, Link } from "react-router-dom";
 
 import {
-  getModulesByCourse,
-  getLessonsByModule,
-  getCourseById
+  enrollInCourse,
+  getCourseById,
+  getCourseProgress
 } from "../services/course.service";
 
 import { issueCertificate } from "../services/certificate.service";
@@ -13,14 +13,11 @@ import { createPayment, verifyPayment } from "../services/payment.service";
 import PageHeader from "../components/common/PageHeader";
 import SkeletonCard from "../components/common/SkeletonCard";
 
-import api from "../services/api";
-
 function CourseView() {
 
   const { id } = useParams();
+  const user = JSON.parse(localStorage.getItem("user"));
 
-  const [modules, setModules] = useState([]);
-  const [lessons, setLessons] = useState({});
   const [progress, setProgress] = useState(null);
   const [certificate, setCertificate] = useState(null);
   const [error, setError] = useState("");
@@ -29,113 +26,33 @@ function CourseView() {
   const [isEnrolled, setIsEnrolled] = useState(false);
   const [course, setCourse] = useState(null);
 
-  // =========================
-  // LOAD COURSE INFO
-  // =========================
-  useEffect(() => {
-
-    const loadCourse = async () => {
-      try {
-
-        const res = await getCourseById(id);
-
-        const courseData = res?.data || res;
-        setCourse(courseData);
-
-      } catch (err) {
-        console.error("Failed to load course info", err);
-      }
-    };
-
-    loadCourse();
-
-  }, [id]);
-
-  // =========================
-  // LOAD MODULES
-  // =========================
-  useEffect(() => {
-
-    const loadModules = async () => {
-      try {
-
-        const data = await getModulesByCourse(id);
-
-        setModules(data || []);
-
-      } catch (err) {
-
-        console.error(err);
-        setError("Failed to load modules");
-
-      } finally {
-
-        setLoading(false);
-
-      }
-    };
-
-    loadModules();
-
-  }, [id]);
-
-  // =========================
-  // LOAD PROGRESS + ENROLLMENT
-  // =========================
-  useEffect(() => {
-
-    const fetchProgress = async () => {
-
-      try {
-
-        const res = await api.get(`/progress/course/${id}`);
-
-        setProgress(res.data);
-        setIsEnrolled(true);
-
-      } catch (error) {
-
-        if (error?.response?.status === 403) {
-
-          setIsEnrolled(false);
-
-        } else {
-
-          console.error("Progress error:", error);
-
-        }
-
-      }
-
-    };
-
-    fetchProgress();
-
-  }, [id]);
-
-  // =========================
-  // LOAD LESSONS PER MODULE
-  // =========================
-  const loadLessons = async (moduleId) => {
-
-    if (lessons[moduleId]) return;
-
+  const loadCourse = useCallback(async () => {
     try {
+      setLoading(true);
+      setError("");
 
-      const data = await getLessonsByModule(moduleId);
+      const courseData = await getCourseById(id);
 
-      setLessons((prev) => ({
-        ...prev,
-        [moduleId]: data || []
-      }));
+      setCourse(courseData);
+      setIsEnrolled(Boolean(courseData?.isEnrolled));
 
-    } catch {
-
-      setError("Failed to load lessons");
-
+      if (user?.role === "student" && courseData?.isEnrolled) {
+        const progressData = await getCourseProgress(id);
+        setProgress(progressData);
+      } else {
+        setProgress(null);
+      }
+    } catch (err) {
+      console.error("Failed to load course", err);
+      setError(err.response?.data?.message || "Failed to load course");
+    } finally {
+      setLoading(false);
     }
+  }, [id, user?.role]);
 
-  };
+  useEffect(() => {
+    loadCourse();
+  }, [loadCourse]);
 
   // =========================
   // CERTIFICATE HANDLER
@@ -146,6 +63,7 @@ function CourseView() {
 
       const data = await issueCertificate(id);
       setCertificate(data);
+      await loadCourse();
 
     } catch (err) {
 
@@ -153,6 +71,18 @@ function CourseView() {
 
     }
 
+  };
+
+  const handleEnrollFree = async () => {
+    try {
+      setPaying(true);
+      await enrollInCourse(id);
+      await loadCourse();
+    } catch (err) {
+      alert(err.response?.data?.message || "Enrollment failed");
+    } finally {
+      setPaying(false);
+    }
   };
 
   // =========================
@@ -166,8 +96,7 @@ function CourseView() {
 
       const payment = await createPayment(id);
       await verifyPayment(payment.id);
-
-      window.location.reload();
+      await loadCourse();
 
     } catch (err) {
 
@@ -209,22 +138,38 @@ function CourseView() {
       ========================= */}
       <div className="card">
 
-        {!isEnrolled ? (
+        <p>{course?.description || "No description available."}</p>
 
-          <button
-            className="btn btn-primary"
-            onClick={handleBuyCourse}
-            disabled={paying}
-          >
-            {paying ? "Processing Payment..." : "Buy Course"}
-          </button>
-
-        ) : (
-
-          <span className="badge badge-success">
-            Purchased
+        {course?.canManage ? (
+          <span className="badge badge-info">
+            Teacher/Admin access
           </span>
-
+        ) : isEnrolled ? (
+          <span className="badge badge-success">
+            Enrolled
+          </span>
+        ) : user?.role === "student" ? (
+          course?.isPaid ? (
+            <button
+              className="btn btn-primary"
+              onClick={handleBuyCourse}
+              disabled={paying}
+            >
+              {paying ? "Processing Payment..." : `Buy Course${course?.price ? ` - ₹${course.price}` : ""}`}
+            </button>
+          ) : (
+            <button
+              className="btn btn-primary"
+              onClick={handleEnrollFree}
+              disabled={paying}
+            >
+              {paying ? "Enrolling..." : "Enroll for Free"}
+            </button>
+          )
+        ) : (
+          <span className="badge badge-neutral">
+            Course preview
+          </span>
         )}
 
       </div>
@@ -232,7 +177,7 @@ function CourseView() {
       {/* =========================
           PROGRESS CARD
       ========================= */}
-      {isEnrolled && progress && (
+      {user?.role === "student" && isEnrolled && progress && (
 
         <div className="card">
 
@@ -281,34 +226,25 @@ function CourseView() {
       ========================= */}
       <div className="grid">
 
-        {modules.map((m) => (
+        {(course?.modules || []).map((m) => (
 
           <div key={m.id} className="card">
 
-            <h4
-              style={{ cursor: "pointer" }}
-              onClick={() => loadLessons(m.id)}
-            >
-              {m.title}
-            </h4>
+            <h4>{m.title}</h4>
 
-            {lessons[m.id] && (
-
-              <ul>
-
-                {lessons[m.id].map((l) => (
-
-                  <li key={l.id}>
+            <ul>
+              {(m.lessons || []).map((l) => (
+                <li key={l.id}>
+                  {course?.canManage || isEnrolled ? (
                     <Link to={`/lessons/${l.id}`}>
                       {l.title}
                     </Link>
-                  </li>
-
-                ))}
-
-              </ul>
-
-            )}
+                  ) : (
+                    <span>{l.title}</span>
+                  )}
+                </li>
+              ))}
+            </ul>
 
           </div>
 

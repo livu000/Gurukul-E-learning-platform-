@@ -29,3 +29,15 @@ export const getQuizResult = async (attemptId) => {
   const res = await api.get(`/quiz-attempts/${attemptId}`);
   return res.data;
 };
+
+export const getTeacherQuizzes = async () => {
+  const res = await api.get('/quizzes/teacher');
+  return res.data;
+};
+
+export const publishQuiz = async (quizId, isPublished = true) => {
+  const res = await api.patch(`/quizzes/${quizId}/publish`, {
+    isPublished
+  });
+  return res.data;
+};

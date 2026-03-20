@@ -22,6 +22,11 @@ function Dashboard() {
   const [loadingTeacher, setLoadingTeacher] =
     useState(user?.role === "teacher");
 
+  const [studentDashboard, setStudentDashboard] = useState(null);
+  const [studentError, setStudentError] = useState("");
+  const [loadingStudent, setLoadingStudent] =
+    useState(user?.role === "student");
+
   const [adminDashboard, setAdminDashboard] = useState(null);
   const [adminError, setAdminError] = useState("");
   const [loadingAdmin, setLoadingAdmin] =
@@ -61,6 +66,34 @@ function Dashboard() {
   /* =========================
      TEACHER DASHBOARD
   ========================= */
+
+  useEffect(() => {
+
+    if (user?.role !== "student") return;
+
+    const loadStudentDashboard = async () => {
+
+      try {
+
+        const res = await api.get("/dashboard/student");
+        setStudentDashboard(res.data);
+
+      } catch (err) {
+
+        console.error("Student dashboard error:", err);
+        setStudentError("Failed to load student dashboard");
+
+      } finally {
+
+        setLoadingStudent(false);
+
+      }
+
+    };
+
+    loadStudentDashboard();
+
+  }, [user]);
 
   useEffect(() => {
 
@@ -147,15 +180,77 @@ function Dashboard() {
       ========================= */}
 
       {user?.role === "student" && (
+        <div style={{ marginTop: 25 }}>
+          <h3>Student Dashboard</h3>
 
-        <div className="card">
+          {loadingStudent ? (
+            <div className="grid">
+              <SkeletonCard />
+              <SkeletonCard />
+              <SkeletonCard />
+            </div>
+          ) : studentDashboard && (
+            <>
+              <div className="grid">
+                <div className="card">
+                  <h4>Enrolled Courses</h4>
+                  <p>{studentDashboard.enrolledCourses?.length || 0}</p>
+                </div>
 
-          <h4>Student Actions</h4>
+                <div className="card">
+                  <h4>Pending Assignments</h4>
+                  <p>{studentDashboard.pendingAssignments?.length || 0}</p>
+                </div>
 
-          <Link to="/my-certificates">
-            My Certificates
-          </Link>
+                <div className="card">
+                  <h4>Certificates</h4>
+                  <p>{studentDashboard.certificates?.length || 0}</p>
+                </div>
 
+                <div className="card">
+                  <h4>Last 7 Days</h4>
+                  <p>{studentDashboard.weeklyProgress?.lessonsCompleted || 0} lessons completed</p>
+                </div>
+              </div>
+
+              <div className="grid">
+                <div className="card">
+                  <h4>My Courses</h4>
+                  {studentDashboard.enrolledCourses?.length === 0 ? (
+                    <p>No enrolled courses yet.</p>
+                  ) : (
+                    studentDashboard.enrolledCourses.map((course) => (
+                      <p key={course.id}>
+                        <Link to={`/courses/${course.id}`}>{course.title}</Link> - {course.progressPercentage}% complete
+                      </p>
+                    ))
+                  )}
+                </div>
+
+                <div className="card">
+                  <h4>Pending Assignments</h4>
+                  {studentDashboard.pendingAssignments?.length === 0 ? (
+                    <p>No pending assignments.</p>
+                  ) : (
+                    studentDashboard.pendingAssignments.map((assignment) => (
+                      <p key={assignment.id}>
+                        <Link to={`/assignments/${assignment.id}/submit`}>{assignment.title}</Link>
+                      </p>
+                    ))
+                  )}
+                </div>
+
+                <div className="card">
+                  <h4>Quick Links</h4>
+                  <p><Link to="/my-certificates">My Certificates</Link></p>
+                  <p><Link to="/my-payments">My Payments</Link></p>
+                </div>
+              </div>
+            </>
+          )}
+
+          {studentError &&
+            <p className="form-error">{studentError}</p>}
         </div>
 
       )}
@@ -282,8 +377,18 @@ function Dashboard() {
               </div>
 
               <div className="card">
+                <h4>Certificates Issued</h4>
+                <p>{adminDashboard.activity?.certificatesIssued}</p>
+              </div>
+
+              <div className="card">
                 <h4>Total Revenue</h4>
                 <p>{adminDashboard.revenue?.total}</p>
+              </div>
+
+              <div className="card">
+                <h4>Admin Tools</h4>
+                <p><Link to="/admin/users">Manage Users</Link></p>
               </div>
 
             </div>

@@ -1,5 +1,8 @@
 import { useEffect, useState } from "react";
-import api from "../services/api";
+import {
+  getTeacherQuizzes,
+  publishQuiz
+} from "../services/quiz.service";
 
 import PageHeader from "../components/common/PageHeader";
 import SkeletonCard from "../components/common/SkeletonCard";
@@ -20,9 +23,8 @@ function TeacherQuizList() {
 
       try {
 
-        const res = await api.get("/quizzes/teacher");
-
-        setQuizzes(res.data || []);
+        const data = await getTeacherQuizzes();
+        setQuizzes(data || []);
 
       } catch (err) {
 
@@ -41,6 +43,22 @@ function TeacherQuizList() {
     loadQuizzes();
 
   }, []);
+
+  const handlePublish = async (quizId, isPublished) => {
+    try {
+      await publishQuiz(quizId, isPublished);
+      setQuizzes((prev) =>
+        prev.map((quiz) =>
+          quiz.id === quizId
+            ? { ...quiz, isPublished }
+            : quiz
+        )
+      );
+    } catch (err) {
+      console.error("Failed to update quiz publish state:", err);
+      alert(err.response?.data?.message || "Failed to update quiz");
+    }
+  };
 
   return (
 
@@ -101,6 +119,15 @@ function TeacherQuizList() {
             >
               {q.isPublished ? "Published" : "Draft"}
             </span>
+
+            <div className="card-actions">
+              <button
+                className="btn btn-secondary"
+                onClick={() => handlePublish(q.id, !q.isPublished)}
+              >
+                {q.isPublished ? "Unpublish" : "Publish"}
+              </button>
+            </div>
 
           </div>
 

@@ -1,4 +1,4 @@
-const { Course } = require('../models');
+const { Course, Module, Lesson, Enrollment, User } = require('../models');
 
 /**
  * GET /api/courses
@@ -21,10 +21,87 @@ exports.getAllCourses = async (req, res) => {
       where.status = 'published';
     }
 
-    const courses = await Course.findAll({ where });
+    const courses = await Course.findAll({
+      where,
+      include: [{
+        model: User,
+        as: 'teacher',
+        attributes: ['id', 'name', 'email']
+      }],
+      order: [['id', 'DESC']]
+    });
+
     res.json(courses);
   } catch (err) {
     res.status(500).json({ message: 'Failed to fetch courses' });
+  }
+};
+
+/**
+ * GET /api/courses/:id
+ * Public for published courses, privileged for teacher owner/admin
+ */
+exports.getCourseById = async (req, res) => {
+  try {
+    const course = await Course.findByPk(req.params.id, {
+      include: [
+        {
+          model: User,
+          as: 'teacher',
+          attributes: ['id', 'name', 'email']
+        },
+        {
+          model: Module,
+          as: 'modules',
+          include: [{
+            model: Lesson,
+            as: 'lessons'
+          }],
+          order: [['sortOrder', 'ASC']]
+        }
+      ]
+    });
+
+    if (!course) {
+      return res.status(404).json({ message: 'Course not found' });
+    }
+
+    const user = req.user;
+    const isPrivilegedUser = Boolean(
+      user &&
+      (
+        user.role === 'admin' ||
+        (user.role === 'teacher' && Number(course.teacherId) === Number(user.id))
+      )
+    );
+
+    if (course.status !== 'published' && !isPrivilegedUser) {
+      return res.status(404).json({ message: 'Course not found' });
+    }
+
+    let isEnrolled = false;
+
+    if (user?.role === 'student') {
+      const enrollment = await Enrollment.findOne({
+        where: {
+          userId: user.id,
+          courseId: course.id,
+          status: 'active'
+        }
+      });
+
+      isEnrolled = Boolean(enrollment);
+    }
+
+    res.json({
+      ...course.toJSON(),
+      isEnrolled,
+      canManage: isPrivilegedUser,
+      hasAccess: isPrivilegedUser || isEnrolled
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Failed to fetch course' });
   }
 };
 
@@ -34,16 +111,35 @@ exports.getAllCourses = async (req, res) => {
  */
 exports.createCourse = async (req, res) => {
   try {
-    const { title, description } = req.body;
+    const {
+      title,
+      description,
+      isPaid = false,
+      price = 0,
+      teacherId: requestedTeacherId
+    } = req.body;
 
     if (!title) {
       return res.status(400).json({ message: 'Title is required' });
     }
 
+    const normalizedIsPaid = Boolean(isPaid);
+    const normalizedPrice = normalizedIsPaid ? Number(price) : 0;
+
+    if (normalizedIsPaid && (!Number.isFinite(normalizedPrice) || normalizedPrice <= 0)) {
+      return res.status(400).json({ message: 'Paid courses require a valid price' });
+    }
+
+    const teacherId = req.user.role === 'admin' && requestedTeacherId
+      ? Number(requestedTeacherId)
+      : req.user.id;
+
     const course = await Course.create({
       title,
       description,
-      teacherId: req.user.id
+      teacherId,
+      isPaid: normalizedIsPaid,
+      price: normalizedPrice
     });
 
     res.status(201).json(course);

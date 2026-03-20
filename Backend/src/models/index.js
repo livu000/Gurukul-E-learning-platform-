@@ -46,131 +46,183 @@ const RefreshToken = require('./refreshToken.model');
 
 // ---------- Users & Courses ----------
 User.hasMany(Course, {
-  foreignKey: 'teacher_id',
+  as: 'courses',
+  foreignKey: 'teacherId',
   onDelete: 'RESTRICT',
   onUpdate: 'CASCADE'
 });
 Course.belongsTo(User, {
-  foreignKey: 'teacher_id'
+  as: 'teacher',
+  foreignKey: 'teacherId'
 });
 
 // ---------- Courses → Modules ----------
 Course.hasMany(Module, {
-  foreignKey: 'course_id'
+  as: 'modules',
+  foreignKey: 'courseId'
 });
 Module.belongsTo(Course, {
-  foreignKey: 'course_id'
+  as: 'course',
+  foreignKey: 'courseId'
 });
 
 // ---------- Modules → Lessons ----------
 Module.hasMany(Lesson, {
-  foreignKey: 'module_id'
+  as: 'lessons',
+  foreignKey: 'moduleId'
 });
 Lesson.belongsTo(Module, {
-  foreignKey: 'module_id'
+  as: 'module',
+  foreignKey: 'moduleId'
 });
 
 // ---------- Lesson Progress ----------
 Course.hasMany(LessonProgress, {
-  foreignKey: 'course_id'
+  as: 'progressRecords',
+  foreignKey: 'courseId'
 });
 LessonProgress.belongsTo(Course, {
-  foreignKey: 'course_id'
+  as: 'course',
+  foreignKey: 'courseId'
 });
 
 Lesson.hasMany(LessonProgress, {
-  foreignKey: 'lesson_id'
+  as: 'progressRecords',
+  foreignKey: 'lessonId'
 });
 LessonProgress.belongsTo(Lesson, {
-  foreignKey: 'lesson_id'
+  as: 'lesson',
+  foreignKey: 'lessonId'
 });
 
 // ---------- Certificates ----------
 User.hasMany(Certificate, {
+  as: 'certificates',
   foreignKey: 'user_id'
 });
 Certificate.belongsTo(User, {
+  as: 'user',
   foreignKey: 'user_id'
 });
 
 Course.hasMany(Certificate, {
+  as: 'certificates',
   foreignKey: 'course_id'
 });
 Certificate.belongsTo(Course, {
+  as: 'course',
   foreignKey: 'course_id'
 });
 
 // ---------- Quizzes ----------
 Quiz.belongsTo(Course, {
-  foreignKey: 'course_id'
+  as: 'course',
+  foreignKey: 'courseId'
 });
 Course.hasMany(Quiz, {
-  foreignKey: 'course_id'
+  as: 'quizzes',
+  foreignKey: 'courseId'
 });
 
 Quiz.hasMany(QuizQuestion, {
-  foreignKey: 'quiz_id'
+  as: 'questions',
+  foreignKey: 'quizId'
 });
 QuizQuestion.belongsTo(Quiz, {
-  foreignKey: 'quiz_id'
+  as: 'quiz',
+  foreignKey: 'quizId'
 });
 
 QuizQuestion.hasMany(QuizOption, {
-  foreignKey: 'question_id'
+  as: 'options',
+  foreignKey: 'questionId'
 });
 QuizOption.belongsTo(QuizQuestion, {
-  foreignKey: 'question_id'
+  as: 'question',
+  foreignKey: 'questionId'
 });
 
 Quiz.hasMany(QuizAttempt, {
-  foreignKey: 'quiz_id'
+  as: 'attempts',
+  foreignKey: 'quizId'
 });
 QuizAttempt.belongsTo(Quiz, {
-  foreignKey: 'quiz_id'
+  as: 'quiz',
+  foreignKey: 'quizId'
 });
 
 QuizAttempt.hasMany(QuizAnswer, {
-  foreignKey: 'attempt_id'
+  as: 'answers',
+  foreignKey: 'attemptId'
 });
 QuizAnswer.belongsTo(QuizAttempt, {
-  foreignKey: 'attempt_id'
+  as: 'attempt',
+  foreignKey: 'attemptId'
 });
 
 // ---------- Assignments ----------
 Assignment.belongsTo(Course, {
-  foreignKey: 'course_id'
+  as: 'course',
+  foreignKey: 'courseId'
 });
 Course.hasMany(Assignment, {
-  foreignKey: 'course_id'
+  as: 'assignments',
+  foreignKey: 'courseId'
 });
 
 Assignment.hasMany(AssignmentSubmission, {
-  foreignKey: 'assignment_id'
+  as: 'submissions',
+  foreignKey: 'assignmentId'
 });
 AssignmentSubmission.belongsTo(Assignment, {
-  foreignKey: 'assignment_id'
+  as: 'assignment',
+  foreignKey: 'assignmentId'
 });
 
 AssignmentSubmission.hasOne(AssignmentGrade, {
-  foreignKey: 'submission_id'
+  as: 'grade',
+  foreignKey: 'submissionId'
 });
 AssignmentGrade.belongsTo(AssignmentSubmission, {
-  foreignKey: 'submission_id'
+  as: 'submission',
+  foreignKey: 'submissionId'
+});
+
+User.hasMany(AssignmentSubmission, {
+  as: 'assignmentSubmissions',
+  foreignKey: 'studentId'
+});
+AssignmentSubmission.belongsTo(User, {
+  as: 'student',
+  foreignKey: 'studentId'
+});
+
+User.hasMany(AssignmentGrade, {
+  as: 'assignmentGrades',
+  foreignKey: 'gradedBy'
+});
+AssignmentGrade.belongsTo(User, {
+  as: 'grader',
+  foreignKey: 'gradedBy'
 });
 
 // ---------- Enrollment ----------
 User.hasMany(Enrollment, {
-  foreignKey: 'user_id'
+  as: 'enrollments',
+  foreignKey: 'userId'
 });
 Enrollment.belongsTo(User, {
-  foreignKey: 'user_id'
+  as: 'user',
+  foreignKey: 'userId'
 });
 
 Course.hasMany(Enrollment, {
-  foreignKey: 'course_id'
+  as: 'enrollments',
+  foreignKey: 'courseId'
 });
 Enrollment.belongsTo(Course, {
-  foreignKey: 'course_id'
+  as: 'course',
+  foreignKey: 'courseId'
 });
 
 // ======================================================
@@ -179,34 +231,42 @@ Enrollment.belongsTo(Course, {
 
 // User ↔ Payments
 User.hasMany(Payment, {
-  foreignKey: 'user_id'
+  as: 'payments',
+  foreignKey: 'userId'
 });
 Payment.belongsTo(User, {
-  foreignKey: 'user_id'
+  as: 'user',
+  foreignKey: 'userId'
 });
 
 // Course ↔ Payments
 Course.hasMany(Payment, {
-  foreignKey: 'course_id'
+  as: 'payments',
+  foreignKey: 'courseId'
 });
 Payment.belongsTo(Course, {
-  foreignKey: 'course_id'
+  as: 'course',
+  foreignKey: 'courseId'
 });
 
 // Payment ↔ Transactions
 Payment.hasMany(Transaction, {
-  foreignKey: 'payment_id'
+  as: 'transactions',
+  foreignKey: 'paymentId'
 });
 Transaction.belongsTo(Payment, {
-  foreignKey: 'payment_id'
+  as: 'payment',
+  foreignKey: 'paymentId'
 });
 
 // Payment ↔ Invoice (1:1)
 Payment.hasOne(Invoice, {
-  foreignKey: 'payment_id'
+  as: 'invoice',
+  foreignKey: 'paymentId'
 });
 Invoice.belongsTo(Payment, {
-  foreignKey: 'payment_id'
+  as: 'payment',
+  foreignKey: 'paymentId'
 });
 
 

@@ -1,5 +1,4 @@
-const Quiz = require('../models/quiz.model');
-const QuizAttempt = require('../models/quizAttempt.model');
+const { Quiz, QuizAttempt, QuizAnswer, QuizQuestion, Course } = require('../models');
 
 exports.startQuiz = async (req, res) => {
   try {
@@ -57,5 +56,60 @@ exports.startQuiz = async (req, res) => {
     res.status(500).json({
       message: 'Failed to start quiz'
     });
+  }
+};
+
+exports.getAttemptResult = async (req, res) => {
+  try {
+    const attempt = await QuizAttempt.findByPk(req.params.attemptId, {
+      include: [{
+        model: Quiz,
+        as: 'quiz',
+        include: [{
+          model: Course,
+          as: 'course',
+          attributes: ['teacherId']
+        }]
+      }]
+    });
+
+    if (!attempt || !attempt.quiz || !attempt.quiz.course) {
+      return res.status(404).json({ message: 'Quiz attempt not found' });
+    }
+
+    const isStudentOwner = Number(attempt.studentId) === Number(req.user.id);
+    const isTeacherOwner = (
+      req.user.role === 'teacher' &&
+      Number(attempt.quiz.course.teacherId) === Number(req.user.id)
+    );
+    const isAdmin = req.user.role === 'admin';
+
+    if (!isStudentOwner && !isTeacherOwner && !isAdmin) {
+      return res.status(403).json({ message: 'You are not allowed to view this result' });
+    }
+
+    const totalQuestions = await QuizQuestion.count({
+      where: { quizId: attempt.quizId }
+    });
+
+    const correctAnswers = await QuizAnswer.count({
+      where: {
+        attemptId: attempt.id,
+        isCorrect: true
+      }
+    });
+
+    return res.json({
+      id: attempt.id,
+      quizId: attempt.quizId,
+      score: attempt.score,
+      totalQuestions,
+      correctAnswers,
+      startedAt: attempt.startedAt,
+      submittedAt: attempt.submittedAt
+    });
+  } catch (error) {
+    console.error('Get quiz result error:', error);
+    return res.status(500).json({ message: 'Failed to load quiz result' });
   }
 };

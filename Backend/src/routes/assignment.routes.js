@@ -27,6 +27,13 @@ router.post(
   controller.gradeSubmission
 );
 
+router.put(
+  '/submissions/:submissionId/grade',
+  authenticate,
+  authorizeRoles('teacher', 'admin'),
+  controller.gradeSubmission
+);
+
 
 // Student
 

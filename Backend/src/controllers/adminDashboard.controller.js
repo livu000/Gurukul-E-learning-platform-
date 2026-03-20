@@ -2,7 +2,9 @@ const {
   User,
   Course,
   LessonProgress,
-  QuizAttempt
+  QuizAttempt,
+  Payment,
+  Certificate
 } = require('../models');
 
 const sequelize = require('../config/db');
@@ -80,18 +82,20 @@ exports.getAdminDashboard = async (req, res) => {
     });
 
     const quizAttempts = await QuizAttempt.count();
+    const certificatesIssued = await Certificate.count();
 
     const activity = {
       lessonCompletions,
-      quizAttempts
+      quizAttempts,
+      certificatesIssued
     };
 
-    /* 
-       4️ REVENUE (PLACEHOLDER)
-       Payments not implemented yet
-     */
+    const revenueTotal = await Payment.sum('amount', {
+      where: { status: 'success' }
+    });
+
     const revenue = {
-      total: 0
+      total: Number(revenueTotal || 0)
     };
 
     /* 

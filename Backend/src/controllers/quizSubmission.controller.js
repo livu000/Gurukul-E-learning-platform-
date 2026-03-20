@@ -1,7 +1,4 @@
-const QuizAttempt = require('../models/quizAttempt.model');
-const QuizAnswer = require('../models/quizAnswer.model');
-const QuizOption = require('../models/quizOption.model');
-const QuizQuestion = require('../models/quizQuestion.model');
+const { QuizAttempt, QuizAnswer, QuizOption, QuizQuestion, Quiz } = require('../models');
 
 exports.submitQuiz = async (req, res) => {
   try {
@@ -15,7 +12,12 @@ exports.submitQuiz = async (req, res) => {
     }
 
     // 1️ Verify attempt exists
-    const attempt = await QuizAttempt.findByPk(attemptId);
+    const attempt = await QuizAttempt.findByPk(attemptId, {
+      include: [{
+        model: Quiz,
+        as: 'quiz'
+      }]
+    });
     if (!attempt) {
       return res.status(404).json({
         message: 'Quiz attempt not found'
@@ -36,30 +38,58 @@ exports.submitQuiz = async (req, res) => {
       });
     }
 
+    if (
+      attempt.quiz?.timeLimit &&
+      attempt.startedAt &&
+      (
+        Date.now() >
+        new Date(attempt.startedAt).getTime() + (attempt.quiz.timeLimit * 60 * 1000)
+      )
+    ) {
+      return res.status(400).json({
+        message: 'Quiz time limit exceeded'
+      });
+    }
+
     let totalScore = 0;
     const answerRows = [];
+    const answeredQuestions = new Set();
 
     // 4️ Evaluate each answer
     for (const ans of answers) {
-      const { questionId, selectedOptionId } = ans;
+      const questionId = Number(ans.questionId);
+      const selectedOptionId = Number(ans.selectedOptionId);
+
+      if (!questionId || !selectedOptionId) {
+        return res.status(400).json({
+          message: 'Each answer must include questionId and selectedOptionId'
+        });
+      }
+
+      if (answeredQuestions.has(questionId)) {
+        return res.status(400).json({
+          message: `Duplicate answer submitted for question ${questionId}`
+        });
+      }
+
+      answeredQuestions.add(questionId);
+
+      const question = await QuizQuestion.findByPk(questionId);
+      if (!question || Number(question.quizId) !== Number(attempt.quizId)) {
+        return res.status(400).json({
+          message: `Invalid question ${questionId}`
+        });
+      }
 
       // Verify option exists
       const option = await QuizOption.findByPk(selectedOptionId);
-      if (!option) {
+      if (!option || Number(option.questionId) !== Number(question.id)) {
         return res.status(400).json({
           message: `Invalid option selected for question ${questionId}`
         });
       }
 
       const isCorrect = option.isCorrect === true;
-
-      // Get question marks
-      const question = await QuizQuestion.findByPk(questionId);
-      if (!question) {
-        return res.status(400).json({
-          message: `Invalid question ${questionId}`
-        });
-      }
 
       if (isCorrect) {
         totalScore += question.marks;

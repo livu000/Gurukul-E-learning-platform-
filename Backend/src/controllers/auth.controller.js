@@ -100,11 +100,36 @@ exports.refreshToken = async (req, res) => {
       });
     }
 
+    if (stored.expiresAt && stored.expiresAt < new Date()) {
+      return res.status(403).json({
+        message: 'Refresh token expired'
+      });
+    }
+
+    const payload = jwt.verify(
+      refreshToken,
+      process.env.JWT_REFRESH_SECRET
+    );
+
+    if (Number(payload.id) !== Number(stored.userId)) {
+      return res.status(403).json({
+        message: 'Refresh token mismatch'
+      });
+    }
+
+    const user = await User.findByPk(stored.userId);
+
+    if (!user) {
+      return res.status(403).json({
+        message: 'User no longer exists'
+      });
+    }
+
     // Create NEW access token
     const newAccessToken = jwt.sign(
       {
-        id: stored.userId,
-        role: stored.role || 'student' // fallback
+        id: user.id,
+        role: user.role
       },
       process.env.JWT_SECRET,
       { expiresIn: '15m' }

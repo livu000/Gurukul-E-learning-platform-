@@ -50,6 +50,10 @@ export const roleMenus = {
     {
       label: "Create Course",
       path: "/create-course"
+    },
+    {
+      label: "Manage Users",
+      path: "/admin/users"
     }
   ]
 

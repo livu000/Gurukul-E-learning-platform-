@@ -48,7 +48,7 @@ export const gradeSubmissionLegacy = async (data) => {
 // NEW grading (correct REST path)
 
 export const gradeSubmission = async (submissionId, data) => {
-  const res = await api.post(
+  const res = await api.put(
     `/assignments/submissions/${submissionId}/grade`,
     data
   );

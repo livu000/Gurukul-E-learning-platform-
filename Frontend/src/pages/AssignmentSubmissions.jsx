@@ -62,7 +62,7 @@ function AssignmentSubmissions() {
     try {
 
       await gradeSubmission(submissionId, {
-        marks: Number(marks),
+        marksAwarded: Number(marks),
         feedback
       });
 
@@ -153,7 +153,7 @@ function AssignmentSubmissions() {
 function SubmissionCard({ submission, onGrade }) {
 
   const [marks, setMarks] = useState(
-    submission.grade?.marks || ""
+    submission.grade?.marksAwarded || ""
   );
 
   const [feedback, setFeedback] = useState(

@@ -19,4 +19,14 @@ router.get('/teacher', authenticate, (req, res, next) => {
   return dashboardController.getTeacherDashboard(req, res, next);
 });
 
+router.get('/student', authenticate, (req, res, next) => {
+  if (req.user.role !== 'student') {
+    return res.status(403).json({
+      message: 'Access denied. Student role required.'
+    });
+  }
+
+  return dashboardController.getStudentDashboard(req, res, next);
+});
+
 module.exports = router;
