@@ -1,157 +1,36 @@
-import { useEffect, useState } from "react";
-
-import {
-  downloadCertificate,
-  getMyCertificates
-} from "../services/certificate.service";
-
-import PageHeader from "../components/common/PageHeader";
-import SkeletonCard from "../components/common/SkeletonCard";
+import { useEffect, useState } from 'react';
+import { downloadCertificate, getMyCertificates } from '../services/certificate.service';
+import PageHeader from '../components/common/PageHeader';
+import SkeletonCard from '../components/common/SkeletonCard';
 
 export default function MyCertificates() {
-
   const [certs, setCerts] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const [error, setError] = useState('');
 
-  const handleDownload = async (certificateId) => {
+  const handleDownload = async (certificateUid) => {
     try {
-      const blob = await downloadCertificate(certificateId);
+      const blob = await downloadCertificate(certificateUid);
       const url = window.URL.createObjectURL(blob);
-      const link = document.createElement("a");
-
+      const link = document.createElement('a');
       link.href = url;
-      link.download = `certificate-${certificateId}.html`;
+      link.download = `certificate-${certificateUid}.html`;
       document.body.appendChild(link);
       link.click();
       link.remove();
-
       window.URL.revokeObjectURL(url);
     } catch (err) {
-      console.error("Failed to download certificate", err);
-      alert(err.response?.data?.message || "Failed to download certificate");
+      console.error(err);
+      alert(err.response?.data?.message || 'Failed to download certificate');
     }
   };
 
-  /* =========================
-     LOAD CERTIFICATES
-  ========================= */
-
   useEffect(() => {
-
-    const loadCertificates = async () => {
-
-      try {
-
-        const data = await getMyCertificates();
-
-        setCerts(data || []);
-
-      } catch (err) {
-
-        console.error("Failed to load certificates", err);
-        setError("Failed to load certificates");
-
-      } finally {
-
-        setLoading(false);
-
-      }
-
-    };
-
-    loadCertificates();
-
+    getMyCertificates().then((data) => setCerts(data || [])).catch((err) => {
+      console.error(err);
+      setError('Failed to load certificates');
+    }).finally(() => setLoading(false));
   }, []);
 
-  return (
-
-    <div className="page">
-
-      <PageHeader title="My Certificates" />
-
-      {error && <p className="form-error">{error}</p>}
-
-      {/* =========================
-          LOADING STATE
-      ========================= */}
-
-      {loading && (
-
-        <div className="grid">
-          <SkeletonCard />
-          <SkeletonCard />
-          <SkeletonCard />
-        </div>
-
-      )}
-
-      {/* =========================
-          EMPTY STATE
-      ========================= */}
-
-      {!loading && certs.length === 0 && (
-
-        <div className="card-muted">
-          No certificates available.
-        </div>
-
-      )}
-
-      {/* =========================
-          CERTIFICATE GRID
-      ========================= */}
-
-      {!loading && certs.length > 0 && (
-
-        <div className="grid">
-
-          {certs.map((c) => (
-
-            <div
-              key={c.certificate_id}
-              className="card"
-            >
-
-              <p>
-                <strong>Course:</strong> {c.course?.title || `Course ${c.course_id}`}
-              </p>
-
-              <p>
-                <strong>Certificate ID:</strong> {c.certificate_id}
-              </p>
-
-              <div className="card-actions">
-
-                <a
-                  href={`/verify/${c.certificate_id}`}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="btn btn-outline"
-                >
-                  Verify
-                </a>
-
-                <button
-                  type="button"
-                  onClick={() => handleDownload(c.certificate_id)}
-                  className="btn btn-primary"
-                >
-                  Download
-                </button>
-
-              </div>
-
-            </div>
-
-          ))}
-
-        </div>
-
-      )}
-
-    </div>
-
-  );
-
+  return <div className="page"><PageHeader title="My Certificates" />{error && <p className="form-error">{error}</p>}{loading ? <div className="grid"><SkeletonCard /><SkeletonCard /><SkeletonCard /></div> : <div className="grid">{certs.map((cert) => <div key={cert.certificateUid} className="card"><p className="stat-label">Certificate</p><h3>{cert.course?.title || cert.courseTitleSnapshot || 'Completed Course'}</h3><p>Issued on {cert.issuedAt ? new Date(cert.issuedAt).toLocaleDateString() : 'Unknown date'}</p><p><strong>UID:</strong> {cert.certificateUid}</p><div className="card-actions"><a href={`/verify/${cert.certificateUid}`} target="_blank" rel="noreferrer" className="btn btn-secondary">Verify</a><button type="button" onClick={() => handleDownload(cert.certificateUid)} className="btn btn-primary">Download</button></div></div>)}{!certs.length && <div className="card-muted">No certificates available yet.</div>}</div>}</div>;
 }

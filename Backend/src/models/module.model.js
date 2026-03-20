@@ -2,24 +2,22 @@ const { DataTypes } = require('sequelize');
 const sequelize = require('../config/db');
 
 const Module = sequelize.define('Module', {
-  title: {
-    type: DataTypes.STRING,
-    allowNull: false
-  },
-  courseId: {
-    type: DataTypes.INTEGER.UNSIGNED,
-    allowNull: false,
-    field: 'course_id'
-  },
-  sortOrder: {
-    type: DataTypes.INTEGER,
-    field: 'sort_order',
-    defaultValue: 1
-  }
+  id: { type: DataTypes.BIGINT.UNSIGNED, primaryKey: true, autoIncrement: true },
+  courseId: { type: DataTypes.BIGINT.UNSIGNED, allowNull: false, field: 'course_id' },
+  title: { type: DataTypes.STRING(255), allowNull: false },
+  description: { type: DataTypes.TEXT },
+  sortOrder: { type: DataTypes.INTEGER, allowNull: false, defaultValue: 1, field: 'sort_order' },
+  isPublished: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: false, field: 'is_published' },
+  totalDurationMinutes: { type: DataTypes.INTEGER, allowNull: false, defaultValue: 0, field: 'total_duration_minutes' },
+  lessonCount: { type: DataTypes.INTEGER, allowNull: false, defaultValue: 0, field: 'lesson_count' }
 }, {
   tableName: 'modules',
-  timestamps: false
+  underscored: true,
+  timestamps: true,
+  paranoid: true,
+  createdAt: 'created_at',
+  updatedAt: 'updated_at',
+  deletedAt: 'deleted_at'
 });
 
 module.exports = Module;
- 

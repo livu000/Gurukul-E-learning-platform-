@@ -1,218 +1,73 @@
-const {
-  Payment,
-  Transaction,
-  Invoice,
-  Course,
-  Enrollment
-} = require('../models');
-
+const crypto = require('crypto');
+const { Course, Enrollment, Invoice, Payment, Transaction, User } = require('../models');
 const sequelize = require('../config/db');
 
-
-// ==========================================
-// CREATE PAYMENT INTENT
-// ==========================================
 exports.createPayment = async (req, res) => {
   try {
-    const userId = req.user.id;
-    const { courseId } = req.body;
-
-    if (!courseId) {
-      return res.status(400).json({ message: 'courseId required' });
-    }
-
+    const courseId = Number(req.body.courseId);
+    if (!courseId) return res.status(400).json({ message: 'courseId required' });
     const course = await Course.findByPk(courseId);
-
-    if (!course) {
-      return res.status(404).json({ message: 'Course not found' });
-    }
-
-    if (course.status !== 'published') {
-      return res.status(400).json({ message: 'Only published courses can be purchased' });
-    }
-
-    // Course must be paid
-    if (!course.isPaid) {
-      return res.status(400).json({
-        message: 'Free course — use enrollment directly'
-      });
-    }
-
-    // Prevent duplicate enrollment
-    const already = await Enrollment.findOne({
-      where: { userId, courseId }
-    });
-
-    if (already) {
-      return res.status(400).json({ message: 'Already enrolled' });
-    }
-
-    // Create payment intent
+    if (!course) return res.status(404).json({ message: 'Course not found' });
+    if (course.status !== 'published') return res.status(400).json({ message: 'Only published courses can be purchased' });
+    if (!course.isPaid) return res.status(400).json({ message: 'Free course - use direct enrollment' });
+    const existingEnrollment = await Enrollment.findOne({ where: { userId: req.user.id, courseId, status: ['active', 'completed'] } });
+    if (existingEnrollment) return res.status(409).json({ message: 'Already enrolled' });
     const payment = await Payment.create({
-      userId,
+      userId: req.user.id,
       courseId,
       amount: course.price,
-      status: 'pending'
+      currency: course.currency || 'INR',
+      paymentProvider: req.body.paymentProvider || 'mock',
+      providerOrderId: req.body.providerOrderId || `order_${Date.now()}`,
+      status: 'pending',
+      transactionRef: crypto.randomUUID()
     });
-
     return res.status(201).json(payment);
-
   } catch (err) {
     console.error('createPayment error:', err);
     return res.status(500).json({ message: 'Failed to create payment' });
   }
 };
 
-
-// ==========================================
-// VERIFY PAYMENT (TX + IDEMPOTENCY SAFE)
-// ==========================================
 exports.verifyPayment = async (req, res) => {
-  const t = await sequelize.transaction();
-
+  const tx = await sequelize.transaction();
   try {
-    const { paymentId, gatewayData } = req.body;
-
-    if (!paymentId) {
-      await t.rollback();
-      return res.status(400).json({ message: 'paymentId required' });
-    }
-
-    const payment = await Payment.findByPk(paymentId, {
-      transaction: t
-    });
-
-    if (!payment) {
-      await t.rollback();
-      return res.status(404).json({ message: 'Payment not found' });
-    }
-
-    if (Number(payment.userId) !== Number(req.user.id)) {
-      await t.rollback();
-      return res.status(403).json({ message: 'You are not allowed to verify this payment' });
-    }
-
-    // Prevent double verification
+    const paymentId = Number(req.body.paymentId);
+    if (!paymentId) throw new Error('paymentId required');
+    const payment = await Payment.findByPk(paymentId, { transaction: tx });
+    if (!payment) return res.status(404).json({ message: 'Payment not found' });
+    if (Number(payment.userId) !== Number(req.user.id)) return res.status(403).json({ message: 'You are not allowed to verify this payment' });
     if (payment.status === 'success') {
-      await t.rollback();
-      return res.status(400).json({
-        message: 'Payment already verified'
-      });
+      await tx.rollback();
+      return res.json({ message: 'Payment already verified', payment });
     }
-
-    // 🔒 IDEMPOTENCY PROTECTION (Gateway duplicate webhook guard)
-    if (gatewayData?.payment_id) {
-      const existing = await Payment.findOne({
-        where: { providerPaymentId: gatewayData.payment_id },
-        transaction: t
-      });
-
-      if (existing) {
-        await t.rollback();
-        return res.status(409).json({
-          message: 'Duplicate gateway verification detected'
-        });
-      }
-    }
-
-    const existingEnrollment = await Enrollment.findOne({
-      where: {
-        userId: payment.userId,
-        courseId: payment.courseId,
-        status: 'active'
-      },
-      transaction: t
-    });
-
-    if (existingEnrollment) {
-      await t.rollback();
-      return res.status(409).json({
-        message: 'Enrollment already exists for this payment'
-      });
-    }
-
-    // 1️⃣ Update payment
-    payment.status = 'success';
-    payment.providerPaymentId = gatewayData?.payment_id || null;
-
-    await payment.save({ transaction: t });
-
-    // 2️⃣ Transaction log
-    await Transaction.create(
-      {
-        paymentId: payment.id,
-        gatewayResponse: gatewayData || {},
-        status: 'success'
-      },
-      { transaction: t }
-    );
-
-    // 3️⃣ Auto enrollment
-    await Enrollment.create(
-      {
-        userId: payment.userId,
-        courseId: payment.courseId
-      },
-      { transaction: t }
-    );
-
-    // 4️⃣ Invoice creation
-    const invoiceNumber = `INV-${Date.now()}`;
-
-    await Invoice.create(
-      {
-        paymentId: payment.id,
-        invoiceNumber,
-        userId: payment.userId,
-        courseId: payment.courseId,
-        amount: payment.amount
-      },
-      { transaction: t }
-    );
-
-    // ✅ Commit all DB changes
-    await t.commit();
-
-    return res.json({
-      message: 'Payment verified and enrollment created',
-      payment
-    });
-
+    const course = await Course.findByPk(payment.courseId, { transaction: tx });
+    const user = await User.findByPk(payment.userId, { transaction: tx });
+    const gatewayData = req.body.gatewayData || {};
+    await payment.update({ status: 'success', providerPaymentId: gatewayData.payment_id || payment.providerPaymentId || `pay_${Date.now()}` }, { transaction: tx });
+    await Transaction.create({ paymentId: payment.id, provider: payment.paymentProvider || 'mock', eventType: gatewayData.event_type || 'payment.captured', providerOrderId: payment.providerOrderId, providerPaymentId: payment.providerPaymentId, providerEventId: gatewayData.event_id || crypto.randomUUID(), requestPayload: gatewayData, responsePayload: { paymentId: payment.id, status: 'success' }, status: 'processed', isProcessed: true, processedAt: new Date() }, { transaction: tx });
+    const [enrollment, created] = await Enrollment.findOrCreate({ where: { userId: payment.userId, courseId: payment.courseId }, defaults: { userId: payment.userId, courseId: payment.courseId, isPaid: true, paymentId: payment.id, status: 'active' }, transaction: tx });
+    if (!enrollment.paymentId) await enrollment.update({ isPaid: true, paymentId: payment.id, status: 'active' }, { transaction: tx });
+    if (created) await course.update({ enrollCount: Number(course.enrollCount || 0) + 1 }, { transaction: tx });
+    const invoiceNumber = `INV-${new Date().getFullYear()}-${String(payment.id).padStart(6, '0')}`;
+    await Invoice.findOrCreate({ where: { paymentId: payment.id }, defaults: { paymentId: payment.id, userId: payment.userId, courseId: payment.courseId, invoiceNumber, billingName: user?.name || 'Student', billingEmail: user?.email || null, baseAmount: payment.amount, totalAmount: payment.amount, currency: payment.currency, status: 'paid' }, transaction: tx });
+    await tx.commit();
+    return res.json({ message: 'Payment verified and enrollment created', payment });
   } catch (err) {
-    console.error('verifyPayment TX error:', err);
-
-    await t.rollback();
-
-    return res.status(500).json({
-      message: 'Failed to verify payment'
-    });
+    console.error('verifyPayment error:', err);
+    await tx.rollback();
+    return res.status(500).json({ message: err.message || 'Failed to verify payment' });
   }
 };
 
-
-// ==========================================
-// GET MY PAYMENTS
-// ==========================================
 exports.getMyPayments = async (req, res) => {
   try {
-    const userId = req.user.id;
-
-    const payments = await Payment.findAll({
-      where: { userId },
-      include: [{
-        model: Course,
-        as: 'course',
-        attributes: ['id', 'title', 'price']
-      }],
-      order: [['createdAt', 'DESC']]
-    });
-
+    const payments = await Payment.findAll({ where: { userId: req.user.id }, include: [{ model: Course, as: 'course', attributes: ['id', 'title', 'price', 'currency'] }, { model: Invoice, as: 'invoice' }], order: [['createdAt', 'DESC']] });
     return res.json(payments);
-
   } catch (err) {
     console.error('getMyPayments error:', err);
-    return res.status(500).json({
-      message: 'Failed to fetch payments'
-    });
+    return res.status(500).json({ message: 'Failed to fetch payments' });
   }
 };
+
+

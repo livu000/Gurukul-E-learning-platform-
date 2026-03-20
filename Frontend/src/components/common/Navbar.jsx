@@ -1,51 +1,32 @@
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from 'react-router-dom';
 
 function Navbar({ onToggleSidebar }) {
-
   const navigate = useNavigate();
-  const user = JSON.parse(localStorage.getItem("user"));
-
+  const user = JSON.parse(localStorage.getItem('user') || 'null');
   const handleLogout = () => {
     localStorage.clear();
-    navigate("/login");
+    navigate('/login');
   };
-
   return (
-    <div className="navbar">
-
-      {/* LEFT SECTION */}
-      <div style={{ display: "flex", alignItems: "center", gap: 15 }}>
-
-        {/* Hamburger (Mobile Only) */}
-        <button
-          className="hamburger"
-          onClick={onToggleSidebar}
-        >
-          ☰
-        </button>
-
-        {/* Logo */}
-        <h3
-          style={{ cursor: "pointer" }}
-          onClick={() => navigate("/dashboard")}
-        >
-          Gurukul
-        </h3>
-
-      </div>
-
-      {/* RIGHT SECTION */}
-      <div style={{ display: "flex", alignItems: "center", gap: 15 }}>
-        {user && (
-          <span style={{ marginRight: 15 }}>
-            {user.name || user.email || user.role}
+    <header className="navbar">
+      <div className="navbar-left">
+        <button className="hamburger" onClick={onToggleSidebar} type="button">☰</button>
+        <button className="brand-button" type="button" onClick={() => navigate('/dashboard')}>
+          <span className="brand-mark">G</span>
+          <span>
+            <strong>Gurukul</strong>
+            <small>{user?.role ? `${user.role} portal` : 'learning platform'}</small>
           </span>
-        )}
-
-        <button onClick={handleLogout}>Logout</button>
+        </button>
       </div>
-
-    </div>
+      <div className="navbar-right">
+        <div className="user-chip">
+          <span className="user-chip-label">Signed in as</span>
+          <strong>{user?.name || user?.email || 'User'}</strong>
+        </div>
+        <button className="btn btn-secondary" onClick={handleLogout} type="button">Logout</button>
+      </div>
+    </header>
   );
 }
 

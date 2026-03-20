@@ -1,44 +1,31 @@
 const { DataTypes } = require('sequelize');
 const sequelize = require('../config/db');
 
-const LessonProgress = sequelize.define(
-  'LessonProgress',
-  {
-    userId: {
-      type: DataTypes.BIGINT.UNSIGNED,
-      allowNull: false,
-      field: 'user_id'
-    },
-
-    lessonId: {
-      type: DataTypes.BIGINT.UNSIGNED,
-      allowNull: false,
-      field: 'lesson_id'
-    },
-
-    courseId: {
-      type: DataTypes.BIGINT.UNSIGNED,
-      allowNull: false,
-      field: 'course_id'
-    },
-
-    status: {
-      type: DataTypes.ENUM('started', 'completed'),
-      defaultValue: 'started'
-    },
-
-    completedAt: {
-      type: DataTypes.DATE,
-      allowNull: true,
-      field: 'completed_at'
+const LessonProgress = sequelize.define('LessonProgress', {
+  id: { type: DataTypes.BIGINT.UNSIGNED, primaryKey: true, autoIncrement: true },
+  userId: { type: DataTypes.BIGINT.UNSIGNED, allowNull: false, field: 'user_id' },
+  courseId: { type: DataTypes.BIGINT.UNSIGNED, allowNull: false, field: 'course_id' },
+  lessonId: { type: DataTypes.BIGINT.UNSIGNED, allowNull: false, field: 'lesson_id' },
+  lastWatchedSecond: { type: DataTypes.INTEGER, allowNull: false, defaultValue: 0, field: 'last_watched_second' },
+  totalWatchedSeconds: { type: DataTypes.INTEGER, allowNull: false, defaultValue: 0, field: 'total_watched_seconds' },
+  isCompleted: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: false, field: 'is_completed' },
+  completedAt: { type: DataTypes.DATE, field: 'completed_at' },
+  lastAccessedAt: { type: DataTypes.DATE, field: 'last_accessed_at', defaultValue: DataTypes.NOW },
+  status: {
+    type: DataTypes.VIRTUAL,
+    get() { return this.getDataValue('isCompleted') ? 'completed' : 'started'; },
+    set(value) {
+      const completed = value === 'completed';
+      this.setDataValue('isCompleted', completed);
+      this.setDataValue('completedAt', completed ? (this.getDataValue('completedAt') || new Date()) : null);
     }
-  },
-  {
-    tableName: 'lesson_progress',
-    timestamps: true,
-    createdAt: 'created_at',
-    updatedAt: 'updated_at'
   }
-);
+}, {
+  tableName: 'lesson_progress',
+  underscored: true,
+  timestamps: true,
+  createdAt: 'created_at',
+  updatedAt: 'updated_at'
+});
 
 module.exports = LessonProgress;

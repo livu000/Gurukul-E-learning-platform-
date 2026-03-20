@@ -1,33 +1,24 @@
-import { NavLink } from "react-router-dom";
-import { roleMenus } from "./sidebar.config";
+import { NavLink } from 'react-router-dom';
+import { roleMenus } from './sidebar.config';
 
 function Sidebar({ sidebarOpen }) {
-
-  const storedUser = localStorage.getItem("user");
-  const user = storedUser ? JSON.parse(storedUser) : null;
-
-  const role = user?.role || "student";
-
+  const user = JSON.parse(localStorage.getItem('user') || 'null');
+  const role = user?.role || 'student';
   const menus = roleMenus[role] || [];
-
   return (
-    <div className={`sidebar ${sidebarOpen ? "open" : ""}`}>
-
-      {menus.map((item) => (
-
-        <NavLink
-          key={item.path}
-          to={item.path}
-          className={({ isActive }) =>
-            isActive ? "sidebar-link active" : "sidebar-link"
-          }
-        >
-          {item.label}
-        </NavLink>
-
-      ))}
-
-    </div>
+    <aside className={`sidebar ${sidebarOpen ? 'open' : ''}`}>
+      <div className="sidebar-section">
+        <p className="sidebar-eyebrow">Workspace</p>
+        <h3>{role.charAt(0).toUpperCase() + role.slice(1)} Center</h3>
+      </div>
+      <nav className="sidebar-nav">
+        {menus.map((item) => (
+          <NavLink key={item.path} to={item.path} className={({ isActive }) => isActive ? 'sidebar-link active' : 'sidebar-link'}>
+            <span>{item.label}</span>
+          </NavLink>
+        ))}
+      </nav>
+    </aside>
   );
 }
 

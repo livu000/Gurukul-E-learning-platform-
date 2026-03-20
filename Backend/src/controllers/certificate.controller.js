@@ -1,184 +1,82 @@
-const { v4: uuidv4 } = require('uuid');
-const { Op } = require('sequelize');
-const { Certificate, Lesson, Module, LessonProgress, Course, User } = require('../models');
+const crypto = require('crypto');
+const { Certificate, Course, Enrollment, User } = require('../models');
 
-// ISSUE CERTIFICATE
+function buildCertificatePayload(certificate) {
+  return {
+    id: certificate.id,
+    certificateUid: certificate.certificateUid,
+    verificationCode: certificate.verificationCode,
+    certificateUrl: certificate.certificateUrl,
+    issuedAt: certificate.issuedAt,
+    isValid: certificate.isValid,
+    userId: certificate.userId,
+    courseId: certificate.courseId,
+    enrollmentId: certificate.enrollmentId,
+    userNameSnapshot: certificate.userNameSnapshot,
+    courseTitleSnapshot: certificate.courseTitleSnapshot
+  };
+}
+
 const issueCertificate = async (req, res) => {
   try {
-    const userId = req.user.id;
-    const courseId = req.params.courseId;
-
-    const course = await Course.findByPk(courseId);
-    if (!course) {
-      return res.status(404).json({ message: 'Course not found' });
-    }
-
-    const lessons = await Lesson.findAll({
-      attributes: ['id'],
-      include: [{
-        model: Module,
-        as: 'module',
-        attributes: [],
-        where: { courseId }
-      }]
+    const courseId = Number(req.params.courseId);
+    const enrollment = await Enrollment.findOne({ where: { userId: req.user.id, courseId, status: 'completed' }, include: [{ model: Course, as: 'course' }, { model: User, as: 'user' }] });
+    if (!enrollment?.course || !enrollment.user) return res.status(400).json({ message: 'Course not fully completed' });
+    const existing = await Certificate.findOne({ where: { userId: req.user.id, courseId } });
+    if (existing) return res.json(buildCertificatePayload(existing));
+    const certificate = await Certificate.create({
+      certificateUid: crypto.randomUUID(),
+      userId: req.user.id,
+      courseId,
+      enrollmentId: enrollment.id,
+      verificationCode: crypto.randomBytes(8).toString('hex').toUpperCase(),
+      userNameSnapshot: enrollment.user.name,
+      courseTitleSnapshot: enrollment.course.title,
+      issuedAt: new Date()
     });
-
-    const lessonIds = lessons.map((lesson) => lesson.id);
-    const totalLessons = lessonIds.length;
-
-    const completedLessons = await LessonProgress.count({
-      where: {
-        userId,
-        courseId,
-        status: 'completed',
-        lessonId: {
-          [Op.in]: lessonIds
-        }
-      }
-    });
-
-    if (totalLessons === 0 || completedLessons !== totalLessons) {
-      return res.status(400).json({ message: 'Course not fully completed' });
-    }
-
-    const existing = await Certificate.findOne({
-      where: { user_id: userId, course_id: courseId }
-    });
-
-    if (existing) return res.json(existing);
-
-    const cert = await Certificate.create({
-      certificate_id: uuidv4().replace(/-/g, '').slice(0, 20),
-      user_id: userId,
-      course_id: courseId,
-      issued_at: new Date()
-    });
-
-    res.json(cert);
+    await enrollment.update({ certificateIssued: true });
+    return res.json(buildCertificatePayload(certificate));
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    console.error(err);
+    return res.status(500).json({ message: err.message || 'Failed to issue certificate' });
   }
 };
 
-// MY CERTIFICATES
 const getMyCertificates = async (req, res) => {
   try {
-    const certs = await Certificate.findAll({
-      where: { user_id: req.user.id },
-      include: [{
-        model: Course,
-        as: 'course',
-        attributes: ['id', 'title']
-      }],
-      order: [['issued_at', 'DESC']]
-    });
-
-    res.json(certs);
+    const certs = await Certificate.findAll({ where: { userId: req.user.id }, include: [{ model: Course, as: 'course', attributes: ['id', 'title'] }], order: [['issuedAt', 'DESC']] });
+    return res.json(certs.map((certificate) => ({ ...buildCertificatePayload(certificate), course: certificate.course })));
   } catch (err) {
     console.error(err);
-    res.status(500).json({ message: 'Failed to load certificates' });
+    return res.status(500).json({ message: 'Failed to load certificates' });
   }
 };
 
-// VERIFY CERTIFICATE
 const verifyCertificate = async (req, res) => {
   try {
-    const cert = await Certificate.findOne({
-      where: { certificate_id: req.params.certificateId },
-      include: [
-        {
-          model: Course,
-          as: 'course',
-          attributes: ['id', 'title']
-        },
-        {
-          model: User,
-          as: 'user',
-          attributes: ['id', 'name', 'email']
-        }
-      ]
-    });
-
-    if (!cert) {
-      return res.status(404).json({ message: 'Invalid certificate' });
-    }
-
-    res.json(cert);
+    const cert = await Certificate.findOne({ where: { certificateUid: req.params.certificateId }, include: [{ model: Course, as: 'course', attributes: ['id', 'title'] }, { model: User, as: 'user', attributes: ['id', 'name', 'email'] }] });
+    if (!cert) return res.status(404).json({ message: 'Invalid certificate' });
+    return res.json({ ...buildCertificatePayload(cert), course: cert.course, user: cert.user });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ message: 'Failed to verify certificate' });
+    return res.status(500).json({ message: 'Failed to verify certificate' });
   }
 };
 
 const downloadCertificate = async (req, res) => {
   try {
-    const cert = await Certificate.findOne({
-      where: { certificate_id: req.params.certificateId },
-      include: [
-        {
-          model: Course,
-          as: 'course',
-          attributes: ['id', 'title']
-        },
-        {
-          model: User,
-          as: 'user',
-          attributes: ['id', 'name', 'email']
-        }
-      ]
-    });
-
-    if (!cert) {
-      return res.status(404).json({ message: 'Certificate not found' });
-    }
-
-    const isOwner = Number(cert.user_id) === Number(req.user.id);
-    const isAdmin = req.user.role === 'admin';
-
-    if (!isOwner && !isAdmin) {
-      return res.status(403).json({ message: 'You are not allowed to download this certificate' });
-    }
-
-    const html = `
-<!doctype html>
-<html>
-  <head>
-    <meta charset="utf-8" />
-    <title>Certificate ${cert.certificate_id}</title>
-    <style>
-      body { font-family: Arial, sans-serif; padding: 40px; color: #1f2937; }
-      .certificate { border: 4px solid #1d4ed8; padding: 32px; max-width: 760px; margin: 0 auto; }
-      h1 { margin: 0 0 12px; font-size: 36px; }
-      p { font-size: 18px; line-height: 1.6; }
-      .meta { margin-top: 24px; font-size: 14px; color: #475569; }
-    </style>
-  </head>
-  <body>
-    <div class="certificate">
-      <h1>Course Completion Certificate</h1>
-      <p>This certifies that <strong>${cert.user?.name || 'Student'}</strong> has successfully completed <strong>${cert.course?.title || `Course ${cert.course_id}`}</strong>.</p>
-      <p>Issued on ${new Date(cert.issued_at).toLocaleString('en-US', { dateStyle: 'long' })}.</p>
-      <p class="meta">Certificate ID: ${cert.certificate_id}</p>
-    </div>
-  </body>
-</html>`;
-
+    const cert = await Certificate.findOne({ where: { certificateUid: req.params.certificateId }, include: [{ model: Course, as: 'course', attributes: ['id', 'title'] }, { model: User, as: 'user', attributes: ['id', 'name', 'email'] }] });
+    if (!cert) return res.status(404).json({ message: 'Certificate not found' });
+    const isOwner = Number(cert.userId) === Number(req.user.id);
+    if (!isOwner && req.user.role !== 'admin') return res.status(403).json({ message: 'You are not allowed to download this certificate' });
+    const html = `<!doctype html><html><head><meta charset="utf-8" /><title>Certificate ${cert.certificateUid}</title><style>body{font-family:Georgia,serif;padding:40px;background:#f5f3ef;color:#111827}.certificate{border:6px solid #111827;padding:40px;max-width:820px;margin:0 auto;background:#fffdf8}h1{font-size:40px;margin:0 0 12px}p{font-size:18px;line-height:1.7}.meta{margin-top:24px;font-size:14px;color:#4b5563}</style></head><body><div class="certificate"><h1>Certificate of Completion</h1><p>This certifies that <strong>${cert.userNameSnapshot || cert.user?.name || 'Student'}</strong> successfully completed <strong>${cert.courseTitleSnapshot || cert.course?.title || 'Course'}</strong>.</p><p>Issued on ${new Date(cert.issuedAt).toLocaleDateString('en-US', { dateStyle: 'long' })}.</p><p class="meta">Certificate UID: ${cert.certificateUid}<br/>Verification Code: ${cert.verificationCode}</p></div></body></html>`;
     res.setHeader('Content-Type', 'text/html; charset=utf-8');
-    res.setHeader(
-      'Content-Disposition',
-      `attachment; filename="certificate-${cert.certificate_id}.html"`
-    );
-
-    res.send(html);
+    res.setHeader('Content-Disposition', `attachment; filename="certificate-${cert.certificateUid}.html"`);
+    return res.send(html);
   } catch (err) {
     console.error(err);
-    res.status(500).json({ message: 'Failed to download certificate' });
+    return res.status(500).json({ message: 'Failed to download certificate' });
   }
 };
 
-module.exports = {
-  issueCertificate,
-  getMyCertificates,
-  verifyCertificate,
-  downloadCertificate
-};
+module.exports = { issueCertificate, getMyCertificates, verifyCertificate, downloadCertificate };

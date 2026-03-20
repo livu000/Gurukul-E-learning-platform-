@@ -1,199 +1,60 @@
-import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
-
-import {
-  getCourses,
-  submitCourse,
-  updateCourseStatus
-} from "../services/course.service";
-
-import PageHeader from "../components/common/PageHeader";
-import SkeletonCard from "../components/common/SkeletonCard";
+import { useCallback, useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { getCourses, submitCourse, updateCourseStatus } from '../services/course.service';
+import PageHeader from '../components/common/PageHeader';
+import SkeletonCard from '../components/common/SkeletonCard';
 
 function CourseList() {
-
   const navigate = useNavigate();
-
+  const user = JSON.parse(localStorage.getItem('user') || 'null');
   const [courses, setCourses] = useState([]);
-  const [error, setError] = useState("");
+  const [filters, setFilters] = useState({ q: '', category: '', isPaid: '' });
+  const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
 
-  const user = JSON.parse(localStorage.getItem("user"));
-
-  // =========================
-  // LOAD COURSES
-  // =========================
-  const loadCourses = async () => {
+  const loadCourses = useCallback(async () => {
     try {
-      const data = await getCourses();
+      setLoading(true);
+      const params = {};
+      if (filters.q.trim()) params.q = filters.q.trim();
+      if (filters.category.trim()) params.category = filters.category.trim();
+      if (filters.isPaid) params.isPaid = filters.isPaid;
+      const data = await getCourses(params);
       setCourses(data || []);
-      setError("");
+      setError('');
     } catch (err) {
       console.error(err);
-      setError("Failed to load courses");
+      setError('Failed to load courses');
     } finally {
       setLoading(false);
     }
-  };
+  }, [filters]);
 
-  useEffect(() => {
-    loadCourses();
-  }, []);
+  useEffect(() => { loadCourses(); }, [loadCourses]);
 
-  // =========================
-  // OPEN COURSE
-  // =========================
-  const openCourse = (courseId) => {
-    navigate(`/courses/${courseId}`);
-  };
-
-  // =========================
-  // TEACHER SUBMIT
-  // =========================
-  const handleSubmitForReview = async (id) => {
+  const handleAction = async (courseId, action, rejectionReason) => {
     try {
-      await submitCourse(id);
-      loadCourses();
+      if (action === 'submit') await submitCourse(courseId); else await updateCourseStatus(courseId, action, rejectionReason);
+      await loadCourses();
     } catch (err) {
-      alert(err.response?.data?.message || "Action failed");
+      alert(err.response?.data?.message || 'Action failed');
     }
   };
-
-  // =========================
-  // ADMIN STATUS UPDATE
-  // =========================
-  const handleUpdateStatus = async (id, status) => {
-    try {
-      await updateCourseStatus(id, status);
-      loadCourses();
-    } catch (err) {
-      alert(err.response?.data?.message || "Action failed");
-    }
-  };
-
-  // =========================
-  // LOADING STATE
-  // =========================
-  if (loading) {
-    return (
-      <div className="page">
-        <PageHeader title="Course List" />
-        <div className="grid">
-          <SkeletonCard />
-          <SkeletonCard />
-          <SkeletonCard />
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="page">
-
-      <PageHeader title="Course List" />
-
-      {error && <p className="form-error">{error}</p>}
-
-      {courses.length === 0 && <p>No courses available</p>}
-
-      {/* =========================
-          COURSE GRID
-      ========================= */}
-      <div className="grid">
-
-        {courses.map((course) => (
-
-          <div
-            key={course.id}
-            className="card"
-            onClick={() => openCourse(course.id)}
-            style={{ cursor: "pointer" }}
-          >
-
-            <h4>{course.title}</h4>
-
-            <p>{course.description}</p>
-
-            {/* =========================
-                STATUS BADGE
-            ========================= */}
-            <span
-              className={`badge ${course.status === "published"
-                  ? "badge-success"
-                  : course.status === "review"
-                    ? "badge-warning"
-                    : "badge-neutral"
-                }`}
-            >
-              {course.status}
-            </span>
-
-            {/* ROLE BASED ACTIONS */}
-            <div style={{ marginTop: 12 }}>
-
-              {/* TEACHER BUILDER */}
-              {user?.role === "teacher" && (
-                <button
-                  className="btn btn-secondary"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    navigate(`/teacher/course/${course.id}/builder`);
-                  }}
-                  style={{ marginRight: 8 }}
-                >
-                  Open Builder
-                </button>
-              )}
-
-              {/* TEACHER SUBMIT */}
-              {user?.role === "teacher" && course.status === "draft" && (
-                <button
-                  className="btn btn-primary"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleSubmitForReview(course.id);
-                  }}
-                >
-                  Submit for Review
-                </button>
-              )}
-
-              {/* ADMIN ACTION */}
-              {user?.role === "admin" && course.status === "review" && (
-                <>
-                  <button
-                    className="btn btn-success"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleUpdateStatus(course.id, "published");
-                    }}
-                  >
-                    Approve
-                  </button>
-
-                  <button
-                    className="btn btn-danger"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleUpdateStatus(course.id, "draft");
-                    }}
-                    style={{ marginLeft: 8 }}
-                  >
-                    Reject
-                  </button>
-                </>
-              )}
-
-            </div>
-
-          </div>
-
-        ))}
-
+      <PageHeader title={user?.role === 'admin' ? 'Course Review Queue' : 'Course Library'} action={<button className="btn btn-secondary" onClick={loadCourses}>Refresh</button>} />
+      <div className="card filter-bar">
+        <input className="form-input" placeholder="Search courses, subtitles, descriptions" value={filters.q} onChange={(e) => setFilters((prev) => ({ ...prev, q: e.target.value }))} />
+        <input className="form-input" placeholder="Category" value={filters.category} onChange={(e) => setFilters((prev) => ({ ...prev, category: e.target.value }))} />
+        <select className="form-select" value={filters.isPaid} onChange={(e) => setFilters((prev) => ({ ...prev, isPaid: e.target.value }))}><option value="">All pricing</option><option value="false">Free</option><option value="true">Paid</option></select>
+        <button className="btn btn-primary" onClick={loadCourses}>Apply</button>
       </div>
-
+      {error && <p className="form-error">{error}</p>}
+      {loading ? <div className="grid"><SkeletonCard /><SkeletonCard /><SkeletonCard /></div> : <div className="grid">{courses.map((course) => <div key={course.id} className="card course-card"><p className="stat-label">{course.category || 'General'}{course.teacher?.name ? ` • ${course.teacher.name}` : ''}</p><h3>{course.title}</h3><p>{course.subtitle || course.description || 'No description available.'}</p><div className="course-meta"><span className="badge badge-info">{course.status}</span><span className="badge badge-neutral">{course.isPaid ? `Paid • ₹${course.price}` : 'Free'}</span></div><div className="card-actions"><button className="btn btn-secondary" onClick={() => navigate(`/courses/${course.id}`)}>Open</button>{user?.role === 'teacher' && <button className="btn btn-secondary" onClick={() => navigate(`/teacher/course/${course.id}/builder`)}>Builder</button>}{user?.role === 'teacher' && course.status === 'draft' && <button className="btn btn-primary" onClick={() => handleAction(course.id, 'submit')}>Submit for Review</button>}{user?.role === 'admin' && course.status === 'review' && <><button className="btn btn-primary" onClick={() => handleAction(course.id, 'approved')}>Approve</button><button className="btn btn-secondary" onClick={() => handleAction(course.id, 'published')}>Publish</button><button className="btn btn-danger" onClick={() => handleAction(course.id, 'rejected', 'Rejected during admin review')}>Reject</button></>}</div></div>)}{!courses.length && <div className="card-muted">No courses matched your current filters.</div>}</div>}
     </div>
   );
 }
 
 export default CourseList;
+
