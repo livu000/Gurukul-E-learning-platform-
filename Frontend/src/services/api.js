@@ -1,4 +1,5 @@
 import axios from "axios";
+import { clearAuthSession, getAccessToken, getRefreshToken, setAuthSession } from "../utils/session";
 
 /* ======================================
    AXIOS INSTANCE
@@ -21,9 +22,10 @@ api.interceptors.request.use(
   (config) => {
 
     const accessToken = localStorage.getItem("accessToken");
+    const fallbackToken = getAccessToken();
 
-    if (accessToken) {
-      config.headers.Authorization = `Bearer ${accessToken}`;
+    if (accessToken || fallbackToken) {
+      config.headers.Authorization = `Bearer ${accessToken || fallbackToken}`;
     }
 
     return config;
@@ -55,12 +57,12 @@ api.interceptors.response.use(
 
       try {
 
-        const refreshToken = localStorage.getItem("refreshToken");
+        const refreshToken = getRefreshToken();
 
         // If refresh token missing → logout
         if (!refreshToken) {
 
-          localStorage.clear();
+          clearAuthSession();
           window.location.href = "/login";
 
           return Promise.reject(error);
@@ -73,9 +75,12 @@ api.interceptors.response.use(
         );
 
         const newAccessToken = res.data.accessToken;
+        const newRefreshToken = res.data.refreshToken;
 
-        // Store new access token
-        localStorage.setItem("accessToken", newAccessToken);
+        setAuthSession({
+          accessToken: newAccessToken,
+          refreshToken: newRefreshToken
+        });
 
         // Update header
         originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
@@ -87,7 +92,7 @@ api.interceptors.response.use(
 
         console.error("Token refresh failed:", refreshError);
 
-        localStorage.clear();
+        clearAuthSession();
         window.location.href = "/login";
 
         return Promise.reject(refreshError);

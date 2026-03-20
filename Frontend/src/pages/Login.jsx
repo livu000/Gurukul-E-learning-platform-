@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import api from '../services/api';
+import { login } from '../services/auth.service';
 
 function Login() {
   const navigate = useNavigate();
@@ -16,12 +16,12 @@ function Login() {
     setLoading(true);
     setError('');
     try {
-      const res = await api.post('/auth/login', { email: email.trim(), password: password.trim(), deviceInfo: navigator.userAgent });
-      const { accessToken, refreshToken, user } = res.data || {};
+      const { accessToken, user } = await login({
+        email: email.trim(),
+        password: password.trim(),
+        deviceInfo: navigator.userAgent
+      });
       if (!accessToken || !user) throw new Error('Invalid login response');
-      localStorage.setItem('accessToken', accessToken);
-      localStorage.setItem('refreshToken', refreshToken);
-      localStorage.setItem('user', JSON.stringify(user));
       navigate('/dashboard');
     } catch (err) {
       console.error('Login failed:', err);

@@ -3,6 +3,7 @@ import { Outlet } from 'react-router-dom';
 import Navbar from './Navbar';
 import Sidebar from './Sidebar';
 import Breadcrumb from './Breadcrumb';
+import NotificationToasts from './NotificationToasts';
 
 function MainLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -16,6 +17,7 @@ function MainLayout() {
           <Outlet />
         </main>
       </div>
+      <NotificationToasts />
     </div>
   );
 }

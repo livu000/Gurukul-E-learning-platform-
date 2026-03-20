@@ -8,8 +8,18 @@ export const getAssignmentsByCourse = async (courseId) => {
   return res.data;
 };
 
+export const getAssignmentById = async (assignmentId) => {
+  const res = await api.get(`/assignments/${assignmentId}`);
+  return res.data;
+};
+
 export const submitAssignment = async (data) => {
   const res = await api.post('/assignments/submit', data);
+  return res.data;
+};
+
+export const getMySubmissions = async () => {
+  const res = await api.get('/assignments/my-submissions');
   return res.data;
 };
 
@@ -18,6 +28,21 @@ export const submitAssignment = async (data) => {
 
 export const createAssignment = async (data) => {
   const res = await api.post('/assignments', data);
+  return res.data;
+};
+
+export const updateAssignment = async (assignmentId, data) => {
+  const res = await api.patch(`/assignments/${assignmentId}`, data);
+  return res.data;
+};
+
+export const publishAssignment = async (assignmentId, isPublished = true) => {
+  const res = await api.patch(`/assignments/${assignmentId}/publish`, { isPublished });
+  return res.data;
+};
+
+export const deleteAssignment = async (assignmentId) => {
+  const res = await api.delete(`/assignments/${assignmentId}`);
   return res.data;
 };
 

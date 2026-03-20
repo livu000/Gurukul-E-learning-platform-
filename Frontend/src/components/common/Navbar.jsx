@@ -1,11 +1,13 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { logout } from '../../services/auth.service';
 import { clearNotifications, getNotifications, subscribeNotifications } from '../../utils/notifications';
 import { applyTheme, getStoredTheme, toggleTheme } from '../../utils/theme';
+import { getSessionUser } from '../../utils/session';
 
 function Navbar({ onToggleSidebar }) {
   const navigate = useNavigate();
-  const user = JSON.parse(localStorage.getItem('user') || 'null');
+  const user = getSessionUser();
   const [theme, setTheme] = useState(getStoredTheme());
   const [notifications, setNotifications] = useState(getNotifications());
   const [panelOpen, setPanelOpen] = useState(false);
@@ -30,8 +32,8 @@ function Navbar({ onToggleSidebar }) {
     return [{ id: 'seed-student', title: 'Learning Focus', message: 'Resume your latest lesson and keep assignment deadlines in check.', createdAt: new Date().toISOString() }];
   }, [notifications, user?.role]);
 
-  const handleLogout = () => {
-    localStorage.clear();
+  const handleLogout = async () => {
+    await logout();
     navigate('/login');
   };
 

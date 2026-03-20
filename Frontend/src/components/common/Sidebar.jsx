@@ -1,8 +1,9 @@
 import { NavLink } from 'react-router-dom';
 import { roleMenus } from './sidebar.config';
+import { getSessionUser } from '../../utils/session';
 
 function Sidebar({ sidebarOpen }) {
-  const user = JSON.parse(localStorage.getItem('user') || 'null');
+  const user = getSessionUser();
   const role = user?.role || 'student';
   const menus = roleMenus[role] || [];
   return (
@@ -10,6 +11,7 @@ function Sidebar({ sidebarOpen }) {
       <div className="sidebar-section">
         <p className="sidebar-eyebrow">Workspace</p>
         <h3>{role.charAt(0).toUpperCase() + role.slice(1)} Center</h3>
+        <p>{user?.name || user?.email || 'Gurukul User'}</p>
       </div>
       <nav className="sidebar-nav">
         {menus.map((item) => (

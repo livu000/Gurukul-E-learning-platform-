@@ -10,6 +10,11 @@ export const createCourse = async (data) => {
   return res.data;
 };
 
+export const updateCourse = async (courseId, data) => {
+  const res = await api.patch(`/courses/${courseId}`, data);
+  return res.data;
+};
+
 export const submitCourse = async (courseId) => {
   const res = await api.patch(`/courses/${courseId}/submit`);
   return res.data;
@@ -22,6 +27,16 @@ export const updateCourseStatus = async (courseId, action, rejectionReason) => {
 
 export const getCourseById = async (courseId) => {
   const res = await api.get(`/courses/${courseId}`);
+  return res.data;
+};
+
+export const getTeacherCourses = async (params = {}) => {
+  const res = await api.get('/courses/mine', { params });
+  return res.data;
+};
+
+export const getReviewQueue = async () => {
+  const res = await api.get('/courses/review-queue');
   return res.data;
 };
 
@@ -45,8 +60,18 @@ export const createModule = async (courseId, title, extra = {}) => {
   return res.data;
 };
 
+export const reorderModules = async (courseId, modules) => {
+  const res = await api.patch(`/modules/course/${courseId}/reorder`, { modules });
+  return res.data;
+};
+
 export const createLesson = async (moduleId, lesson) => {
   const res = await api.post('/lessons', { moduleId, ...lesson });
+  return res.data;
+};
+
+export const reorderLessons = async (moduleId, lessons) => {
+  const res = await api.patch(`/lessons/module/${moduleId}/reorder`, { lessons });
   return res.data;
 };
 

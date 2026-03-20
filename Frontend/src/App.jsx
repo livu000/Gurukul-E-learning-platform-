@@ -19,6 +19,7 @@ import TeacherAssignments from './pages/TeacherAssignments';
 import AssignmentSubmissions from './pages/AssignmentSubmissions';
 import AdminUsers from './pages/AdminUsers';
 import AdminAnalytics from './pages/AdminAnalytics';
+import AdminCertificates from './pages/AdminCertificates';
 
 import MyCertificates from './pages/MyCertificates';
 import VerifyCertificate from './pages/VerifyCertificate';
@@ -73,6 +74,7 @@ function App() {
       <Route element={<ProtectedRoute roles={['admin']} />}>
         <Route element={<MainLayout />}>
           <Route path="/admin/users" element={<AdminUsers />} />
+          <Route path="/admin/certificates" element={<AdminCertificates />} />
           <Route path="/admin/analytics" element={<AdminAnalytics />} />
         </Route>
       </Route>

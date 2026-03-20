@@ -17,6 +17,7 @@ export const roleMenus = {
     { label: 'Dashboard', path: '/dashboard' },
     { label: 'Course Review', path: '/courses' },
     { label: 'Users', path: '/admin/users' },
+    { label: 'Certificates', path: '/admin/certificates' },
     { label: 'Analytics', path: '/admin/analytics' },
     { label: 'Settings', path: '/settings' }
   ]

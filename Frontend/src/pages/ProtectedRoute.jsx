@@ -1,14 +1,15 @@
 import { Navigate, Outlet } from "react-router-dom";
+import { getAccessToken, getSessionUser } from "../utils/session";
 
 function ProtectedRoute({ roles = [] }) {
 
-  const accessToken = localStorage.getItem("accessToken");
-  const user = JSON.parse(localStorage.getItem("user"));
+  const accessToken = getAccessToken();
+  const user = getSessionUser();
 
   // ===============================
   // NOT LOGGED IN
   // ===============================
-  if (!accessToken) {
+  if (!accessToken || !user) {
     return <Navigate to="/login" replace />;
   }
 

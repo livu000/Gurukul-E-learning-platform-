@@ -21,6 +21,16 @@ export const getMyPayments = async () => {
   return res.data;
 };
 
+export const getAllPayments = async () => {
+  const res = await api.get('/payments/admin');
+  return res.data;
+};
+
+export const refundPayment = async (paymentId, reason) => {
+  const res = await api.post(`/payments/${paymentId}/refund`, { reason });
+  return res.data;
+};
+
 export const downloadInvoice = async (paymentId) => {
   const res = await api.get(`/payments/${paymentId}/invoice`, {
     responseType: 'blob'
