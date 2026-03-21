@@ -9,7 +9,7 @@ const parseLimit = (value, fallback) => {
 // GLOBAL API LIMITER
 // ===============================
 exports.apiLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
+  windowMs: 15 * 60 * 100000, // 15 minutes
   max: parseLimit(process.env.API_RATE_LIMIT_MAX, 300),
   message: {
     message: 'Too many requests, slow down.'
@@ -23,7 +23,7 @@ exports.apiLimiter = rateLimit({
 // LOGIN LIMITER (STRICTER)
 // ===============================
 exports.loginLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
+  windowMs: 15 * 60 * 100000,
   max: parseLimit(process.env.LOGIN_RATE_LIMIT_MAX, 5),
   message: {
     message: 'Too many login attempts. Try again later.'

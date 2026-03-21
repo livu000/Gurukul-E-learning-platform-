@@ -13,16 +13,29 @@ function sanitizeUser(user) {
     phone: user.phone,
     profileImage: user.profileImage,
     lastLoginAt: user.lastLoginAt,
-    createdAt: user.createdAt
+    createdAt: user.created_at // ✅ FIXED
   };
 }
 
 exports.getProfile = async (req, res) => {
   try {
     const user = await User.findByPk(req.user.id, {
-      attributes: ['id', 'name', 'email', 'role', 'status', 'bio', 'phone', 'profileImage', 'lastLoginAt', 'createdAt']
+      attributes: [
+        'id',
+        'name',
+        'email',
+        'role',
+        'status',
+        'bio',
+        'phone',
+        'profileImage',
+        'lastLoginAt',
+        'created_at' // ✅ FIXED
+      ]
     });
+
     if (!user) return res.status(404).json({ message: 'User not found' });
+
     return res.json(sanitizeUser(user));
   } catch (err) {
     console.error(err);
@@ -60,6 +73,7 @@ exports.updateProfile = async (req, res) => {
 exports.createUser = async (req, res) => {
   try {
     const { name, email, password, role = 'student', status = 'active' } = req.body;
+
     if (!name?.trim() || !email?.trim() || !password) {
       return res.status(400).json({ message: 'name, email and password are required' });
     }
@@ -72,12 +86,16 @@ exports.createUser = async (req, res) => {
       return res.status(400).json({ message: 'Invalid status' });
     }
 
-    const existing = await User.findOne({ where: { email: email.trim().toLowerCase() } });
+    const existing = await User.findOne({
+      where: { email: email.trim().toLowerCase() }
+    });
+
     if (existing) {
       return res.status(409).json({ message: 'Email already in use' });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
+
     const user = await User.create({
       name: name.trim(),
       email: email.trim().toLowerCase(),
@@ -112,11 +130,23 @@ exports.getAllUsers = async (req, res) => {
 
     const users = await User.findAll({
       where,
-      attributes: ['id', 'name', 'email', 'role', 'status', 'phone', 'lastLoginAt', 'createdAt'],
-      order: [['createdAt', 'DESC'], ['id', 'DESC']]
+      attributes: [
+        'id',
+        'name',
+        'email',
+        'role',
+        'status',
+        'phone',
+        'lastLoginAt',
+        'created_at' // ✅ FIXED
+      ],
+      order: [
+        ['created_at', 'DESC'], // ✅ FIXED
+        ['id', 'DESC']
+      ]
     });
 
-    return res.json(users);
+    return res.json(users.map(sanitizeUser));
   } catch (err) {
     console.error(err);
     return res.status(500).json({ message: 'Failed to fetch users' });
@@ -126,9 +156,22 @@ exports.getAllUsers = async (req, res) => {
 exports.getUserById = async (req, res) => {
   try {
     const user = await User.findByPk(req.params.id, {
-      attributes: ['id', 'name', 'email', 'role', 'status', 'bio', 'phone', 'profileImage', 'lastLoginAt', 'createdAt']
+      attributes: [
+        'id',
+        'name',
+        'email',
+        'role',
+        'status',
+        'bio',
+        'phone',
+        'profileImage',
+        'lastLoginAt',
+        'created_at' // ✅ FIXED
+      ]
     });
+
     if (!user) return res.status(404).json({ message: 'User not found' });
+
     return res.json(sanitizeUser(user));
   } catch (err) {
     console.error(err);
@@ -143,8 +186,14 @@ exports.updateUser = async (req, res) => {
 
     const nextRole = req.body.role ?? user.role;
     const nextStatus = req.body.status ?? user.status;
-    if (!['admin', 'teacher', 'student'].includes(nextRole)) return res.status(400).json({ message: 'Invalid role' });
-    if (!['active', 'blocked', 'inactive'].includes(nextStatus)) return res.status(400).json({ message: 'Invalid status' });
+
+    if (!['admin', 'teacher', 'student'].includes(nextRole)) {
+      return res.status(400).json({ message: 'Invalid role' });
+    }
+
+    if (!['active', 'blocked', 'inactive'].includes(nextStatus)) {
+      return res.status(400).json({ message: 'Invalid status' });
+    }
 
     const updatePayload = {
       name: req.body.name ?? user.name,
@@ -180,7 +229,9 @@ exports.updateUser = async (req, res) => {
 exports.deleteUser = async (req, res) => {
   try {
     const user = await User.findByPk(req.params.id);
+
     if (!user) return res.status(404).json({ message: 'User not found' });
+
     if (Number(user.id) === Number(req.user.id)) {
       return res.status(400).json({ message: 'You cannot delete your own account' });
     }
