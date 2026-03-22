@@ -6,7 +6,7 @@ const { buildSimplePdf } = require('../utils/document.util');
 const { logAudit } = require('../utils/audit.util');
 
 function buildInvoicePdf(invoice, payment, course, user) {
-  const invoiceDate = new Date(invoice.invoiceDate || invoice.createdAt).toLocaleDateString('en-IN', {
+  const invoiceDate = new Date(invoice.invoiceDate || invoice.created_at).toLocaleDateString('en-IN', {
     year: 'numeric',
     month: 'long',
     day: 'numeric'
@@ -66,7 +66,7 @@ exports.createPayment = async (req, res) => {
         courseId,
         status: 'pending'
       },
-      order: [['createdAt', 'DESC']]
+      order: [['created_at', 'DESC']]
     });
 
     if (existingPending) {
@@ -223,7 +223,7 @@ exports.getMyPayments = async (req, res) => {
         { model: Course, as: 'course', attributes: ['id', 'title', 'price', 'currency'] },
         { model: Invoice, as: 'invoice' }
       ],
-      order: [['createdAt', 'DESC']]
+      order: [['created_at', 'DESC']]
     });
 
     return res.json(
@@ -247,7 +247,7 @@ exports.getAllPayments = async (req, res) => {
         { model: Invoice, as: 'invoice' },
         { model: Transaction, as: 'transactions' }
       ],
-      order: [['createdAt', 'DESC']]
+      order: [['created_at', 'DESC']]
     });
 
     return res.json(payments);
