@@ -9,7 +9,26 @@ exports.enrollInCourse = async (req, res) => {
     const course = await Course.findByPk(courseId);
     if (!course) return res.status(404).json({ message: 'Course not found' });
     if (course.status !== 'published') return res.status(400).json({ message: 'Only published courses can be enrolled' });
-    if (course.isPaid) return res.status(400).json({ message: 'Paid course - complete payment first' });
+    if (course.isPaid) {
+      const paymentId = Number(req.body.paymentId);
+
+      if (!paymentId) {
+        return res.status(400).json({ message: 'paymentId is required for paid courses' });
+      }
+
+      const payment = await Payment.findOne({
+        where: {
+          id: paymentId,
+          userId: req.user.id,
+          courseId,
+          status: 'success'
+        }
+      });
+
+      if (!payment) {
+        return res.status(400).json({ message: 'Paid course - complete payment first' });
+      }
+    }
     const [enrollment, created] = await Enrollment.findOrCreate({
       where: { userId: req.user.id, courseId },
       defaults: { userId: req.user.id, courseId, isPaid: false, status: 'active', enrolledAt: new Date() }
@@ -55,7 +74,7 @@ exports.getCourseEnrollments = async (req, res) => {
         { model: User, as: 'user', attributes: ['id', 'name', 'email', 'status'] },
         { model: Payment, as: 'payment' }
       ],
-      order: [['updatedAt', 'DESC']]
+      order: [['updated_at', 'DESC']]
     });
 
     return res.json(enrollments);
