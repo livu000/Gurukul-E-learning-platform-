@@ -87,7 +87,7 @@ exports.getAllCourses = async (req, res) => {
         { model: User, as: 'teacher', attributes: ['id', 'name', 'email'] },
         { model: User, as: 'approver', attributes: ['id', 'name'], required: false }
       ],
-      order: [['updatedAt', 'DESC'], ['id', 'DESC']]
+      order: [['updated_at', 'DESC'], ['id', 'DESC']]
     });
 
     return res.json(courses);
@@ -106,7 +106,7 @@ exports.getTeacherCourses = async (req, res) => {
     const courses = await Course.findAll({
       where: { teacherId },
       include: [{ model: User, as: 'approver', attributes: ['id', 'name'], required: false }],
-      order: [['updatedAt', 'DESC']]
+      order: [['updated_at', 'DESC']]
     });
 
     return res.json(courses);
@@ -121,7 +121,7 @@ exports.getReviewQueue = async (req, res) => {
     const courses = await Course.findAll({
       where: { status: 'review' },
       include: [{ model: User, as: 'teacher', attributes: ['id', 'name', 'email'] }],
-      order: [['updatedAt', 'DESC'], ['id', 'DESC']]
+      order: [['updated_at', 'DESC'], ['id', 'DESC']]
     });
 
     return res.json(courses);
