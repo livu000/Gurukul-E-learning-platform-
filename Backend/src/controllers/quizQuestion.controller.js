@@ -141,7 +141,7 @@ exports.addOptions = async (req, res) => {
     await QuizOption.destroy({ where: { questionId } });
     const createdOptions = await QuizOption.bulkCreate(options.map((option, index) => ({
       questionId,
-      optionText: option.optionText,
+      optionText: option.optionText || option.text,
       isCorrect: Boolean(option.isCorrect),
       sortOrder: Number(option.sortOrder || index + 1)
     })));
