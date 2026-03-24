@@ -5,7 +5,7 @@ const controller = require('../controllers/quizSubmission.controller');
 const { ensureEnrolled } = require('../middleware/enrollment.middleware');
 // Student submits quiz
 router.post(
-  '/submit',
+  '/:attemptId/submit',
   authenticate,
   authorizeRoles('student'),
   ensureEnrolled,

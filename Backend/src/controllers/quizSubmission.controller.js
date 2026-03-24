@@ -5,7 +5,8 @@ exports.submitQuiz = async (req, res) => {
   const transaction = await sequelize.transaction();
 
   try {
-    const { attemptId, answers } = req.body;
+    const attemptId =Number(req.params.attemptId || req.body.attemptId);
+    const {  answers } = req.body;
     if (!attemptId || !Array.isArray(answers) || !answers.length) {
       await transaction.rollback();
       return res.status(400).json({ message: 'attemptId and answers are required' });
