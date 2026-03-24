@@ -31,7 +31,7 @@ exports.startQuiz = async (req, res) => {
         studentId: req.user.id,
         status: 'in_progress'
       },
-      order: [['createdAt', 'DESC']]
+      order: [['created_at', 'DESC']]
     });
 
     if (openAttempt) {
