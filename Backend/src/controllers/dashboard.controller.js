@@ -22,7 +22,7 @@ exports.getTeacherDashboard = async (req, res) => {
     const courses = await Course.findAll({
       where: { teacherId },
       attributes: ['id', 'title', 'status', 'approvalStatus', 'enrollCount'],
-      order: [['updatedAt', 'DESC']]
+      order: [['updated_at', 'DESC']]
     });
 
     const pendingAssignments = await AssignmentSubmission.count({
@@ -63,7 +63,7 @@ exports.getTeacherDashboard = async (req, res) => {
         { model: User, as: 'student', attributes: ['id', 'name'] },
         { model: AssignmentGrade, as: 'grade', required: false }
       ],
-      order: [['submittedAt', 'DESC']],
+      order: [['submitted_at', 'DESC']],
       limit: 5
     });
 
@@ -109,7 +109,7 @@ exports.getStudentDashboard = async (req, res) => {
     const enrollments = await Enrollment.findAll({
       where: { userId, status: { [Op.in]: ['active', 'completed'] } },
       include: [{ model: Course, as: 'course', include: [{ model: User, as: 'teacher', attributes: ['id', 'name'] }] }],
-      order: [['updatedAt', 'DESC']]
+      order: [['updated_at', 'DESC']]
     });
 
     const enrolledCourseIds = enrollments.map((item) => item.courseId);
@@ -145,7 +145,7 @@ exports.getStudentDashboard = async (req, res) => {
     const quizHistory = await QuizAttempt.findAll({
       where: { studentId: userId },
       include: [{ model: Quiz, as: 'quiz', attributes: ['id', 'title', 'courseId'] }],
-      order: [['updatedAt', 'DESC']]
+      order: [['updated_at', 'DESC']]
     });
 
     const certificates = await Certificate.findAll({
@@ -160,7 +160,7 @@ exports.getStudentDashboard = async (req, res) => {
         id: { [Op.notIn]: enrolledCourseIds.length ? enrolledCourseIds : [0] }
       },
       limit: 4,
-      order: [['updatedAt', 'DESC']]
+      order: [['updated_at', 'DESC']]
     });
 
     const lessonsCompleted = await LessonProgress.count({
