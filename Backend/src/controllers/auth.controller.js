@@ -135,7 +135,7 @@ exports.refreshToken = async (req, res) => {
 exports.me = async (req, res) => {
   try {
     const user = await User.findByPk(req.user.id, {
-      attributes: ['id', 'name', 'email', 'role', 'status', 'profileImage', 'bio', 'phone', 'lastLoginAt', 'createdAt']
+      attributes: ['id', 'name', 'email', 'role', 'status', 'profileImage', 'bio', 'phone', 'lastLoginAt', 'created_at']
     });
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
@@ -153,8 +153,8 @@ exports.getSessions = async (req, res) => {
       where: {
         userId: req.user.id
       },
-      attributes: ['id', 'deviceInfo', 'ipAddress', 'userAgent', 'createdAt', 'updatedAt', 'expiresAt', 'revokedAt'],
-      order: [['createdAt', 'DESC']]
+      attributes: ['id', 'deviceInfo', 'ipAddress', 'userAgent', 'created_at', 'updated_at', 'expires_at', 'revoked_at'],
+      order: [['created_at', 'DESC']]
     });
 
     return res.json(sessions);

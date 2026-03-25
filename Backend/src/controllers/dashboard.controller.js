@@ -43,13 +43,13 @@ exports.getTeacherDashboard = async (req, res) => {
         [sequelize.fn('COUNT', sequelize.col('QuizAttempt.id')), 'totalAttempts'],
         [sequelize.fn('AVG', sequelize.col('score')), 'averageScore']
       ],
-      include: [{ model: Quiz, as: 'quiz', required: true, include: [{ model: Course, as: 'course', required: true, where: { teacherId } }] }],
+      include: [{ model: Quiz, as: 'quiz',attributes:[], required: true, include: [{ model: Course, as: 'course',attributes:[], required: true, where: { teacherId } }] }],
       raw: true
     });
 
     const revenueTotal = await Payment.sum('amount', {
       where: { status: 'success' },
-      include: [{ model: Course, as: 'course', required: true, where: { teacherId } }]
+      include: [{ model: Course, as: 'course',attributes:[], required: true, where: { teacherId } }]
     });
 
     const recentSubmissions = await AssignmentSubmission.findAll({

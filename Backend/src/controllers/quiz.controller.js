@@ -82,7 +82,7 @@ exports.getQuizzesByCourse = async (req, res) => {
 
     const quizzes = await Quiz.findAll({
       where,
-      order: [['updatedAt', 'DESC'], ['id', 'DESC']]
+      order: [['updated_at', 'DESC'], ['id', 'DESC']]
     });
 
     return res.json(
@@ -138,7 +138,7 @@ exports.getTeacherQuizzes = async (req, res) => {
     const quizzes = await Quiz.findAll({
       where: req.user.role === 'teacher' ? { createdBy: req.user.id } : {},
       include: [{ model: Course, as: 'course', attributes: ['id', 'title', 'teacherId'] }],
-      order: [['updatedAt', 'DESC']]
+      order: [['updated_at', 'DESC']]
     });
     return res.json(quizzes);
   } catch (error) {
