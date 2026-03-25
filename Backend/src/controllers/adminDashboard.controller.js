@@ -36,7 +36,7 @@ async function getTopCourses(limit = 8) {
   const courses = await Course.findAll({
     attributes: ['id', 'title', 'category', 'status', 'enrollCount', 'avgRating', 'price'],
     include: [{ model: User, as: 'teacher', attributes: ['id', 'name'] }],
-    order: [['enrollCount', 'DESC'], ['updatedAt', 'DESC']],
+    order: [['enrollCount', 'DESC'], ['updated_at', 'DESC']],
     limit
   });
 
@@ -59,7 +59,7 @@ async function getRecentCompletions(limit = 10) {
       { model: User, as: 'user', attributes: ['id', 'name', 'email'] },
       { model: Course, as: 'course', attributes: ['id', 'title'] }
     ],
-    order: [['completedAt', 'DESC']],
+    order: [['completed_at', 'DESC']],
     limit
   });
 
@@ -101,7 +101,7 @@ exports.getAdminDashboard = async (req, res) => {
       where: { status: 'review' },
       limit: 5,
       include: [{ model: User, as: 'teacher', attributes: ['id', 'name'] }],
-      order: [['updatedAt', 'DESC']]
+      order: [['updated_at', 'DESC']]
     });
 
     return res.json({

@@ -94,7 +94,7 @@ exports.getCompletionRecords = async (req, res) => {
         { model: User, as: 'user', attributes: ['id', 'name', 'email'] },
         { model: Course, as: 'course', attributes: ['id', 'title'] }
       ],
-      order: [['updatedAt', 'DESC']]
+      order: [['updated_at', 'DESC']]
     });
 
     return res.json(completions);
