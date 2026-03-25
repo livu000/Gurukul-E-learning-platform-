@@ -3,7 +3,8 @@ import { useParams, Link } from "react-router-dom";
 
 import {
   createAssignment,
-  getAssignmentsByCourse
+  getAssignmentsByCourse,
+  publishAssignment   // ✅ ADDED
 } from "../services/assignment.service";
 
 import PageHeader from "../components/common/PageHeader";
@@ -106,6 +107,26 @@ function TeacherAssignments() {
 
   };
 
+  /* =========================
+     PUBLISH TOGGLE (ADDED)
+  ========================= */
+  const handlePublishToggle = async (assignmentId, currentStatus) => {
+
+    try {
+
+      await publishAssignment(assignmentId, !currentStatus);
+
+      fetchAssignments();
+
+    } catch (err) {
+
+      console.error("Publish failed:", err);
+      alert("Failed to update publish status");
+
+    }
+
+  };
+
   return (
 
     <div className="page">
@@ -162,6 +183,14 @@ function TeacherAssignments() {
               >
                 View Submissions
               </Link>
+
+              {/* ✅ ADDED BUTTON ONLY */}
+              <button
+                className="btn"
+                onClick={() => handlePublishToggle(a.id, a.isPublished)}
+              >
+                {a.isPublished ? "Unpublish" : "Publish"}
+              </button>
 
             </div>
 

@@ -24,6 +24,12 @@ function AssignmentSubmit() {
 
     if (submitting) return;
 
+    // ✅ ADDED: validate assignmentId
+    if (!assignmentId || isNaN(Number(assignmentId))) {
+      setError("Invalid assignment");
+      return;
+    }
+
     // Prevent empty submissions
     if (!answerText.trim()) {
       setError("Answer cannot be empty");
@@ -37,7 +43,7 @@ function AssignmentSubmit() {
     try {
 
       await submitAssignment({
-        assignmentId: Number(assignmentId),
+        assignmentId: Number(assignmentId), // already correct
         answerText: answerText.trim(),
         fileUrl: null
       });
