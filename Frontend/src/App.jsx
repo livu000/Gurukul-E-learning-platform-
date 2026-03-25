@@ -39,6 +39,7 @@ function App() {
       <Route path="/landing" element={<Landing />} />
       <Route path="/login" element={<Login />} />
 
+      {/* 🔹 COMMON AUTH ROUTES */}
       <Route element={<ProtectedRoute />}>
         <Route element={<MainLayout />}>
           <Route path="/dashboard" element={<Dashboard />} />
@@ -49,6 +50,28 @@ function App() {
         </Route>
       </Route>
 
+      {/* 🔹 STUDENT DASHBOARD */}
+      <Route element={<ProtectedRoute roles={['student']} />}>
+        <Route element={<MainLayout />}>
+          <Route path="/student/dashboard" element={<Dashboard />} />
+        </Route>
+      </Route>
+
+      {/* 🔹 TEACHER DASHBOARD */}
+      <Route element={<ProtectedRoute roles={['teacher']} />}>
+        <Route element={<MainLayout />}>
+          <Route path="/teacher/dashboard" element={<Dashboard />} />
+        </Route>
+      </Route>
+
+      {/* 🔹 ADMIN DASHBOARD */}
+      <Route element={<ProtectedRoute roles={['admin']} />}>
+        <Route element={<MainLayout />}>
+          <Route path="/admin/dashboard" element={<Dashboard />} />
+        </Route>
+      </Route>
+
+      {/* 🔹 STUDENT FEATURES */}
       <Route element={<ProtectedRoute roles={['student']} />}>
         <Route element={<MainLayout />}>
           <Route path="/courses/:courseId/assignments" element={<AssignmentsList />} />
@@ -61,6 +84,7 @@ function App() {
         </Route>
       </Route>
 
+      {/* 🔹 TEACHER FEATURES */}
       <Route element={<ProtectedRoute roles={['teacher', 'admin']} />}>
         <Route element={<MainLayout />}>
           <Route path="/create-course" element={<CreateCourse />} />
@@ -71,6 +95,7 @@ function App() {
         </Route>
       </Route>
 
+      {/* 🔹 ADMIN FEATURES */}
       <Route element={<ProtectedRoute roles={['admin']} />}>
         <Route element={<MainLayout />}>
           <Route path="/admin/users" element={<AdminUsers />} />
