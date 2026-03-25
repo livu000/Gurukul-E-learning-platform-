@@ -77,7 +77,7 @@ function QuizAttempt() {
         }))
       };
 
-      await submitQuiz(payload);
+      await submitQuiz(attemptId, payload);
 
       navigate(`/quiz/result/${attemptId}`);
 

@@ -20,8 +20,8 @@ export const getQuizQuestions = async (quizId) => {
   return res.data;
 };
 
-export const submitQuiz = async (payload) => {
-  const res = await api.post('/quiz-submissions/submit', payload);
+export const submitQuiz = async (attemptId, payload) => {
+  const res = await api.post(`/quiz-submissions/${attemptId}/submit`, payload);
   return res.data;
 };
 
