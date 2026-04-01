@@ -1,13 +1,16 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import api from '../services/api';
 import PageHeader from '../components/common/PageHeader';
 import SkeletonCard from '../components/common/SkeletonCard';
 import { pushNotification } from '../utils/notifications';
+import { downloadCsv, formatDateTime, openPrintReport } from '../utils/reporting';
 
 const exportOptions = [
-  { label: 'Top Courses CSV', value: 'top-courses' },
-  { label: 'Revenue CSV', value: 'revenue' },
-  { label: 'Completions CSV', value: 'completions' }
+  { label: 'System Overview', value: 'system-overview' },
+  { label: 'Revenue Trend', value: 'revenue' },
+  { label: 'Enrollment Trend', value: 'enrollment' },
+  { label: 'Top Courses', value: 'top-courses' },
+  { label: 'Recent Completions', value: 'completions' }
 ];
 
 function MetricCard({ label, value, hint }) {
@@ -20,10 +23,249 @@ function MetricCard({ label, value, hint }) {
   );
 }
 
+function buildRows(exportType, dashboard, analytics) {
+  switch (exportType) {
+    case 'revenue':
+      return (analytics?.revenueTrend || []).map((item) => ({
+        month: item.month,
+        revenueInInr: item.value
+      }));
+    case 'enrollment':
+      return (analytics?.enrollmentTrend || []).map((item) => ({
+        month: item.month,
+        enrollments: item.value
+      }));
+    case 'top-courses':
+      return (analytics?.topCourses || []).map((course) => ({
+        course: course.title,
+        teacher: course.teacherName,
+        category: course.category || 'General',
+        status: course.status,
+        enrollments: course.enrollCount,
+        avgRating: course.avgRating,
+        priceInInr: course.price
+      }));
+    case 'completions':
+      return (analytics?.recentCompletions || []).map((item) => ({
+        student: item.studentName,
+        email: item.studentEmail,
+        course: item.courseTitle,
+        completedAt: formatDateTime(item.completedAt),
+        progressPercentage: item.progressPercentage,
+        certificateIssued: item.certificateIssued ? 'Yes' : 'No'
+      }));
+    case 'system-overview':
+    default:
+      return [
+        {
+          metric: 'Total Revenue',
+          value: `INR ${dashboard?.revenue?.total || 0}`,
+          note: 'Successful course payments'
+        },
+        {
+          metric: 'Active Students',
+          value: dashboard?.activity?.activeStudents || 0,
+          note: 'Current active enrollments'
+        },
+        {
+          metric: 'Certificates Issued',
+          value: dashboard?.activity?.certificatesIssued || 0,
+          note: 'Completion certificates generated'
+        },
+        {
+          metric: 'Pending Course Reviews',
+          value: dashboard?.courses?.pendingReview || 0,
+          note: 'Courses waiting for admin approval'
+        },
+        {
+          metric: 'Total Users',
+          value: dashboard?.users?.total || 0,
+          note: `${dashboard?.users?.activeUsers || 0} active accounts`
+        },
+        {
+          metric: 'Published Courses',
+          value: dashboard?.courses?.published || 0,
+          note: 'Visible to learners'
+        }
+      ];
+  }
+}
+
+function buildPdfReport(exportType, dashboard, analytics) {
+  const generatedAt = formatDateTime(new Date().toISOString());
+
+  switch (exportType) {
+    case 'revenue':
+      return {
+        title: 'Revenue Trend Report',
+        subtitle: `Generated on ${generatedAt}`,
+        sections: [
+          {
+            title: 'Monthly Revenue',
+            description: 'Successful payment totals grouped by month.',
+            columns: [
+              { key: 'month', label: 'Month' },
+              { key: 'value', label: 'Revenue (INR)' }
+            ],
+            rows: (analytics?.revenueTrend || []).map((item) => ({
+              month: item.month,
+              value: item.value
+            }))
+          }
+        ]
+      };
+    case 'enrollment':
+      return {
+        title: 'Enrollment Trend Report',
+        subtitle: `Generated on ${generatedAt}`,
+        sections: [
+          {
+            title: 'Monthly Enrollments',
+            description: 'Learner enrollment volume grouped by month.',
+            columns: [
+              { key: 'month', label: 'Month' },
+              { key: 'value', label: 'Enrollments' }
+            ],
+            rows: (analytics?.enrollmentTrend || []).map((item) => ({
+              month: item.month,
+              value: item.value
+            }))
+          }
+        ]
+      };
+    case 'top-courses':
+      return {
+        title: 'Top Courses Report',
+        subtitle: `Generated on ${generatedAt}`,
+        sections: [
+          {
+            title: 'Top Performing Courses',
+            description: 'Courses ranked using enrollment and rating performance.',
+            columns: [
+              { key: 'title', label: 'Course' },
+              { key: 'teacherName', label: 'Teacher' },
+              { key: 'category', label: 'Category' },
+              { key: 'status', label: 'Status' },
+              { key: 'enrollCount', label: 'Enrollments' },
+              { key: 'avgRating', label: 'Avg Rating' },
+              { key: 'price', label: 'Price (INR)' }
+            ],
+            rows: (analytics?.topCourses || []).map((course) => ({
+              title: course.title,
+              teacherName: course.teacherName,
+              category: course.category || 'General',
+              status: course.status,
+              enrollCount: course.enrollCount,
+              avgRating: course.avgRating,
+              price: course.price
+            }))
+          }
+        ]
+      };
+    case 'completions':
+      return {
+        title: 'Completion Report',
+        subtitle: `Generated on ${generatedAt}`,
+        sections: [
+          {
+            title: 'Recent Course Completions',
+            description: 'Latest completed enrollments and certificate issuance status.',
+            columns: [
+              { key: 'studentName', label: 'Student' },
+              { key: 'studentEmail', label: 'Email' },
+              { key: 'courseTitle', label: 'Course' },
+              { key: 'completedAt', label: 'Completed At' },
+              { key: 'progressPercentage', label: 'Progress %' },
+              { key: 'certificateIssued', label: 'Certificate' }
+            ],
+            rows: (analytics?.recentCompletions || []).map((item) => ({
+              studentName: item.studentName,
+              studentEmail: item.studentEmail || 'N/A',
+              courseTitle: item.courseTitle,
+              completedAt: formatDateTime(item.completedAt),
+              progressPercentage: item.progressPercentage,
+              certificateIssued: item.certificateIssued ? 'Issued' : 'Pending'
+            }))
+          }
+        ]
+      };
+    case 'system-overview':
+    default:
+      return {
+        title: 'Education Management System Overview',
+        subtitle: `Generated on ${generatedAt}`,
+        sections: [
+          {
+            title: 'Platform KPI Summary',
+            description: 'Current high-level admin metrics from the Gurukul platform.',
+            columns: [
+              { key: 'metric', label: 'Metric' },
+              { key: 'value', label: 'Value' },
+              { key: 'note', label: 'Note' }
+            ],
+            rows: buildRows('system-overview', dashboard, analytics)
+          },
+          {
+            title: 'Revenue Trend',
+            columns: [
+              { key: 'month', label: 'Month' },
+              { key: 'value', label: 'Revenue (INR)' }
+            ],
+            rows: (analytics?.revenueTrend || []).map((item) => ({
+              month: item.month,
+              value: item.value
+            }))
+          },
+          {
+            title: 'Enrollment Trend',
+            columns: [
+              { key: 'month', label: 'Month' },
+              { key: 'value', label: 'Enrollments' }
+            ],
+            rows: (analytics?.enrollmentTrend || []).map((item) => ({
+              month: item.month,
+              value: item.value
+            }))
+          },
+          {
+            title: 'Top Courses',
+            columns: [
+              { key: 'title', label: 'Course' },
+              { key: 'teacherName', label: 'Teacher' },
+              { key: 'enrollCount', label: 'Enrollments' },
+              { key: 'avgRating', label: 'Avg Rating' }
+            ],
+            rows: (analytics?.topCourses || []).map((course) => ({
+              title: course.title,
+              teacherName: course.teacherName,
+              enrollCount: course.enrollCount,
+              avgRating: course.avgRating
+            }))
+          },
+          {
+            title: 'Recent Completions',
+            columns: [
+              { key: 'studentName', label: 'Student' },
+              { key: 'courseTitle', label: 'Course' },
+              { key: 'completedAt', label: 'Completed At' },
+              { key: 'certificateIssued', label: 'Certificate' }
+            ],
+            rows: (analytics?.recentCompletions || []).map((item) => ({
+              studentName: item.studentName,
+              courseTitle: item.courseTitle,
+              completedAt: formatDateTime(item.completedAt),
+              certificateIssued: item.certificateIssued ? 'Issued' : 'Pending'
+            }))
+          }
+        ]
+      };
+  }
+}
+
 export default function AdminAnalytics() {
   const [analytics, setAnalytics] = useState(null);
   const [dashboard, setDashboard] = useState(null);
-  const [exportType, setExportType] = useState('top-courses');
+  const [exportType, setExportType] = useState('system-overview');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -40,28 +282,56 @@ export default function AdminAnalytics() {
       .finally(() => setLoading(false));
   }, []);
 
-  const handleExport = async () => {
+  const selectedLabel = useMemo(
+    () => exportOptions.find((item) => item.value === exportType)?.label || 'Report',
+    [exportType]
+  );
+
+  const handleCsvExport = () => {
     try {
-      const response = await api.get(`/dashboard/admin/analytics?format=csv&exportType=${exportType}`, {
-        responseType: 'blob'
+      setError('');
+      const rows = buildRows(exportType, dashboard, analytics);
+      downloadCsv(`${exportType}.csv`, rows);
+      pushNotification({
+        title: 'CSV Export Ready',
+        message: `${selectedLabel} CSV downloaded successfully.`
       });
-      const url = window.URL.createObjectURL(response.data);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `${exportType}.csv`;
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      window.URL.revokeObjectURL(url);
-      pushNotification({ title: 'Analytics Exported', message: `${exportType} export downloaded successfully.` });
     } catch (err) {
       console.error(err);
-      setError('Failed to export analytics');
+      setError('Failed to export analytics as CSV');
+    }
+  };
+
+  const handlePdfExport = () => {
+    try {
+      setError('');
+      const opened = openPrintReport(buildPdfReport(exportType, dashboard, analytics));
+      if (!opened) {
+        setError('Pop-up blocked. Allow pop-ups to export PDF reports.');
+        return;
+      }
+
+      pushNotification({
+        title: 'PDF Export Opened',
+        message: `${selectedLabel} opened in a print-friendly view. Choose Save as PDF in the print dialog.`
+      });
+    } catch (err) {
+      console.error(err);
+      setError('Failed to export analytics as PDF');
     }
   };
 
   if (loading) {
-    return <div className="page"><PageHeader title="Admin Analytics" /><div className="grid"><SkeletonCard /><SkeletonCard /><SkeletonCard /></div></div>;
+    return (
+      <div className="page">
+        <PageHeader title="Admin Analytics" />
+        <div className="grid">
+          <SkeletonCard />
+          <SkeletonCard />
+          <SkeletonCard />
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -71,9 +341,18 @@ export default function AdminAnalytics() {
         action={
           <div className="page-action">
             <select className="form-select" value={exportType} onChange={(event) => setExportType(event.target.value)}>
-              {exportOptions.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
+              {exportOptions.map((item) => (
+                <option key={item.value} value={item.value}>
+                  {item.label}
+                </option>
+              ))}
             </select>
-            <button className="btn btn-primary" type="button" onClick={handleExport}>Export</button>
+            <button className="btn btn-secondary" type="button" onClick={handleCsvExport}>
+              Export CSV
+            </button>
+            <button className="btn btn-primary" type="button" onClick={handlePdfExport}>
+              Export PDF
+            </button>
           </div>
         }
       />
