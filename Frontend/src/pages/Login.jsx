@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { login } from '../services/auth.service';
+import BrandLogo from '../components/common/BrandLogo';
 
 function Login() {
   const navigate = useNavigate();
@@ -34,6 +35,9 @@ function Login() {
   return (
     <div className="auth-shell">
       <div className="auth-panel auth-panel-art">
+        <div className="auth-brand">
+          <BrandLogo size="lg" subtitle="Education platform" tone="inverse" />
+        </div>
         <p className="auth-eyebrow">Gurukul Platform</p>
         <h1>Build courses, guide learners, and manage your LMS from one workspace.</h1>
         <p>Admin, teacher, and student journeys are all connected through one secure learning platform.</p>
@@ -46,6 +50,9 @@ function Login() {
       </div>
       <div className="auth-panel auth-panel-form">
         <div className="card login-card">
+          <div className="login-card-brand">
+            <BrandLogo size="sm" subtitle="Secure access" />
+          </div>
           <p className="auth-eyebrow">Secure Access</p>
           <h2>Sign in to Gurukul</h2>
           <p className="auth-copy">Use your authorized credentials to enter the correct role workspace.</p>

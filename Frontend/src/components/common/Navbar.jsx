@@ -4,6 +4,7 @@ import { logout } from '../../services/auth.service';
 import { clearNotifications, getNotifications, subscribeNotifications } from '../../utils/notifications';
 import { applyTheme, getStoredTheme, toggleTheme } from '../../utils/theme';
 import { getSessionUser } from '../../utils/session';
+import BrandLogo from './BrandLogo';
 
 function Navbar({ onToggleSidebar }) {
   const navigate = useNavigate();
@@ -42,11 +43,7 @@ function Navbar({ onToggleSidebar }) {
       <div className="navbar-left">
         <button className="hamburger" onClick={onToggleSidebar} type="button">☰</button>
         <button className="brand-button" type="button" onClick={() => navigate('/dashboard')}>
-          <span className="brand-mark">G</span>
-          <span>
-            <strong>Gurukul</strong>
-            <small>{user?.role ? `${user.role} portal` : 'learning platform'}</small>
-          </span>
+          <BrandLogo size="md" subtitle={user?.role ? `${user.role} portal` : 'learning platform'} />
         </button>
       </div>
 
