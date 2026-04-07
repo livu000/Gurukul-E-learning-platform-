@@ -12,6 +12,50 @@ const api = axios.create({
   }
 });
 
+let refreshRequest = null;
+
+function shouldSkipRefresh(url = "") {
+  return url.includes("/auth/login") || url.includes("/auth/refresh");
+}
+
+async function refreshAuthSession() {
+  const refreshToken = getRefreshToken();
+
+  if (!refreshToken) {
+    throw new Error("No refresh token");
+  }
+
+  if (!refreshRequest) {
+    refreshRequest = axios.post(
+      `${import.meta.env.VITE_API_URL || "http://localhost:4000/api"}/auth/refresh`,
+      { refreshToken }
+    )
+      .then((res) => {
+        const newAccessToken = res.data?.accessToken;
+        const newRefreshToken = res.data?.refreshToken;
+
+        if (!newAccessToken || !newRefreshToken) {
+          throw new Error("Invalid refresh response");
+        }
+
+        setAuthSession({
+          accessToken: newAccessToken,
+          refreshToken: newRefreshToken
+        });
+
+        return {
+          accessToken: newAccessToken,
+          refreshToken: newRefreshToken
+        };
+      })
+      .finally(() => {
+        refreshRequest = null;
+      });
+  }
+
+  return refreshRequest;
+}
+
 /* ======================================
    REQUEST INTERCEPTOR
    Attach Access Token Automatically
@@ -21,11 +65,10 @@ api.interceptors.request.use(
 
   (config) => {
 
-    const accessToken = localStorage.getItem("accessToken");
-    const fallbackToken = getAccessToken();
+    const accessToken = getAccessToken();
 
-    if (accessToken || fallbackToken) {
-      config.headers.Authorization = `Bearer ${accessToken || fallbackToken}`;
+    if (accessToken) {
+      config.headers.Authorization = `Bearer ${accessToken}`;
     }
 
     return config;
@@ -46,21 +89,18 @@ api.interceptors.response.use(
 
   async (error) => {
 
-    const originalRequest = error.config;
+    const originalRequest = error.config || {};
 
     if (
       error.response?.status === 401 &&
-      !originalRequest._retry
+      !originalRequest._retry &&
+      !shouldSkipRefresh(originalRequest.url)
     ) {
 
       originalRequest._retry = true;
 
       try {
-
-        const refreshToken = getRefreshToken();
-
-        // If refresh token missing → logout
-        if (!refreshToken) {
+        if (!getRefreshToken()) {
 
           clearAuthSession();
           window.location.href = "/login";
@@ -68,24 +108,13 @@ api.interceptors.response.use(
           return Promise.reject(error);
         }
 
-        // Request new access token
-        const res = await axios.post(
-          `${import.meta.env.VITE_API_URL || "http://localhost:4000/api"}/auth/refresh`,
-          { refreshToken }
-        );
+        const { accessToken: newAccessToken } = await refreshAuthSession();
 
-        const newAccessToken = res.data.accessToken;
-        const newRefreshToken = res.data.refreshToken;
+        originalRequest.headers = {
+          ...(originalRequest.headers || {}),
+          Authorization: `Bearer ${newAccessToken}`
+        };
 
-        setAuthSession({
-          accessToken: newAccessToken,
-          refreshToken: newRefreshToken
-        });
-
-        // Update header
-        originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
-
-        // Retry original request
         return api(originalRequest);
 
       } catch (refreshError) {

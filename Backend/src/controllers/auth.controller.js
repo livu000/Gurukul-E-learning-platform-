@@ -2,21 +2,40 @@ const bcrypt = require('bcrypt');
 const crypto = require('crypto');
 const jwt = require('jsonwebtoken');
 const { User, RefreshToken } = require('../models');
+const sequelize = require('../config/db');
 const { logAudit } = require('../utils/audit.util');
 
 const ACCESS_EXPIRES_IN = '15m';
 const REFRESH_EXPIRES_MS = 7 * 24 * 60 * 60 * 1000;
+const REFRESH_TOKEN_RETRY_LIMIT = 3;
 
 function hashToken(token) {
   return crypto.createHash('sha256').update(token).digest('hex');
 }
 
 function buildAccessToken(user) {
-  return jwt.sign({ id: user.id, role: user.role }, process.env.JWT_SECRET, { expiresIn: ACCESS_EXPIRES_IN });
+  return jwt.sign(
+    { id: user.id, role: user.role, type: 'access' },
+    process.env.JWT_SECRET,
+    {
+      expiresIn: ACCESS_EXPIRES_IN,
+      issuer: 'gurukul',
+      subject: String(user.id)
+    }
+  );
 }
 
 function buildRefreshToken(user) {
-  return jwt.sign({ id: user.id, role: user.role }, process.env.JWT_REFRESH_SECRET, { expiresIn: '7d' });
+  return jwt.sign(
+    { id: user.id, role: user.role, type: 'refresh' },
+    process.env.JWT_REFRESH_SECRET,
+    {
+      expiresIn: '7d',
+      issuer: 'gurukul',
+      subject: String(user.id),
+      jwtid: crypto.randomUUID()
+    }
+  );
 }
 
 function sanitizeUser(user) {
@@ -39,6 +58,48 @@ function sessionContext(req) {
   };
 }
 
+function createHttpError(statusCode, message) {
+  const error = new Error(message);
+  error.statusCode = statusCode;
+  return error;
+}
+
+async function createRefreshSession({ user, context, transaction }) {
+  const expiresAt = new Date(Date.now() + REFRESH_EXPIRES_MS);
+
+  for (let attempt = 0; attempt < REFRESH_TOKEN_RETRY_LIMIT; attempt += 1) {
+    const refreshToken = buildRefreshToken(user);
+    const tokenHash = hashToken(refreshToken);
+
+    try {
+      await RefreshToken.create(
+        {
+          userId: user.id,
+          tokenHash,
+          ...context,
+          expiresAt
+        },
+        { transaction }
+      );
+
+      return {
+        refreshToken,
+        tokenHash,
+        expiresAt
+      };
+    } catch (err) {
+      const isUniqueViolation = err?.name === 'SequelizeUniqueConstraintError';
+      const isLastAttempt = attempt === REFRESH_TOKEN_RETRY_LIMIT - 1;
+
+      if (!isUniqueViolation || isLastAttempt) {
+        throw err;
+      }
+    }
+  }
+
+  throw createHttpError(500, 'Failed to create refresh session');
+}
+
 exports.login = async (req, res) => {
   try {
     const email = req.body.email?.trim().toLowerCase();
@@ -53,17 +114,20 @@ exports.login = async (req, res) => {
     if (!match) return res.status(401).json({ message: 'Invalid credentials' });
 
     const accessToken = buildAccessToken(user);
-    const refreshToken = buildRefreshToken(user);
+    const refreshContext = sessionContext(req);
+    const lastLoginAt = new Date();
 
-    await RefreshToken.create({
-      userId: user.id,
-      tokenHash: hashToken(refreshToken),
-      ...sessionContext(req),
-      expiresAt: new Date(Date.now() + REFRESH_EXPIRES_MS)
+    const { refreshToken } = await sequelize.transaction(async (transaction) => {
+      const issuedSession = await createRefreshSession({
+        user,
+        context: refreshContext,
+        transaction
+      });
+
+      await user.update({ lastLoginAt }, { transaction });
+
+      return issuedSession;
     });
-
-    user.lastLoginAt = new Date();
-    await user.save();
 
     await logAudit({
       req,
@@ -91,26 +155,54 @@ exports.refreshToken = async (req, res) => {
     if (!refreshToken) return res.status(401).json({ message: 'No refresh token' });
 
     const payload = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
-    const stored = await RefreshToken.findOne({ where: { tokenHash: hashToken(refreshToken), userId: payload.id } });
-    if (!stored || stored.revokedAt || (stored.expiresAt && stored.expiresAt < new Date())) {
-      return res.status(403).json({ message: 'Invalid refresh token' });
+    if (payload.type && payload.type !== 'refresh') {
+      throw createHttpError(403, 'Invalid refresh token');
     }
 
-    const user = await User.findByPk(payload.id);
-    if (!user || user.status !== 'active') return res.status(403).json({ message: 'User is not active' });
+    const incomingTokenHash = hashToken(refreshToken);
+    const { user, storedId, nextRefreshToken } = await sequelize.transaction(async (transaction) => {
+      const stored = await RefreshToken.findOne({
+        where: {
+          tokenHash: incomingTokenHash,
+          userId: payload.id
+        },
+        transaction,
+        lock: transaction.LOCK.UPDATE
+      });
 
-    const nextRefreshToken = buildRefreshToken(user);
-    const nextHash = hashToken(nextRefreshToken);
-    await stored.update({
-      revokedAt: new Date(),
-      replacedByTokenHash: nextHash
-    });
+      if (!stored || stored.revokedAt || (stored.expiresAt && stored.expiresAt < new Date())) {
+        throw createHttpError(403, 'Invalid refresh token');
+      }
 
-    await RefreshToken.create({
-      userId: user.id,
-      tokenHash: nextHash,
-      ...sessionContext(req),
-      expiresAt: new Date(Date.now() + REFRESH_EXPIRES_MS)
+      const user = await User.findByPk(payload.id, { transaction });
+      if (!user || user.status !== 'active') {
+        throw createHttpError(403, 'User is not active');
+      }
+
+      const nextSessionContext = sessionContext(req);
+      if (!nextSessionContext.deviceInfo) {
+        nextSessionContext.deviceInfo = stored.deviceInfo;
+      }
+
+      const { refreshToken: nextRefreshToken, tokenHash: nextTokenHash } = await createRefreshSession({
+        user,
+        context: nextSessionContext,
+        transaction
+      });
+
+      await stored.update(
+        {
+          revokedAt: new Date(),
+          replacedByTokenHash: nextTokenHash
+        },
+        { transaction }
+      );
+
+      return {
+        user,
+        storedId: stored.id,
+        nextRefreshToken
+      };
     });
 
     await logAudit({
@@ -119,7 +211,7 @@ exports.refreshToken = async (req, res) => {
       role: user.role,
       action: 'AUTH_REFRESH',
       entityType: 'refresh_tokens',
-      entityId: stored.id
+      entityId: storedId
     });
 
     return res.json({
@@ -128,7 +220,14 @@ exports.refreshToken = async (req, res) => {
     });
   } catch (err) {
     console.error('Refresh error:', err);
-    return res.status(403).json({ message: 'Refresh failed' });
+    const statusCode = err.statusCode || 403;
+    const message = err.name === 'TokenExpiredError'
+      ? 'Refresh token expired'
+      : err.name === 'JsonWebTokenError'
+        ? 'Invalid refresh token'
+        : err.message || 'Refresh failed';
+
+    return res.status(statusCode).json({ message });
   }
 };
 
